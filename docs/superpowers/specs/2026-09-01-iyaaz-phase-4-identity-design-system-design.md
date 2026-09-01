@@ -1,6 +1,6 @@
 # IYAAZ Phase 4 — Identity and Design System Specification
 
-Status: Approved in principle; implementation pending final spec review.
+Status: Approved after conversation-alignment review; implementation pending execution plan.
 
 ## Context
 
@@ -8,15 +8,19 @@ Phase 3 completed the sanitized data snapshot, deterministic search engine, serv
 
 The current app still uses a foundation-only shell and a small token set. Existing SVG brand assets are structurally valid but visually simplified relative to the approved identity board. Phase 4 must replace that temporary layer without changing the Phase 3 data/search contracts.
 
+The approved identity board supplied in the project conversation is the visual source of truth for the IYAAZ mark. Existing repository SVGs are temporary engineering references only; they must not overrule the approved board when silhouette, negative space, gem placement, depth, translucency, or highlight relationships differ.
+
 ## Goals
 
-1. Establish one canonical IYAAZ vector identity matching the approved amethyst/lavender translucent ribbon mark as closely as practical in SVG.
+1. Establish one canonical IYAAZ vector identity matching the approved amethyst/lavender translucent ribbon mark as faithfully as practical in SVG.
 2. Derive consistent dark, light, favicon, horizontal-lockup, and stacked-lockup assets from the same geometry.
-3. Introduce a reusable bilingual design-token system for light and dark themes.
-4. Wire the provided Thmanyah Serif Display family into the application without exposing font files as user-facing artifacts.
-5. Replace the foundation-only page chrome with a reusable application shell that future library, detail, prompt-builder, favorites, history, clients, docs, and statistics surfaces can reuse.
-6. Preserve first-class RTL/LTR behavior using logical CSS properties.
-7. Verify the shell, brand assets, theme behavior, responsive behavior, and directional semantics at unit/structural/browser layers.
+3. Establish a custom, theme-aware IYAAZ functional icon family for application controls, using `currentColor` where appropriate and selective RTL mirroring only for truly directional semantics.
+4. Introduce a reusable bilingual design-token system for light and dark themes.
+5. Wire the provided Thmanyah Serif Display family into the application without external font requests and without exposing font files as chat/download artifacts.
+6. Replace the foundation-only page chrome with a reusable application shell that future library, detail, prompt-builder, favorites, history, clients, docs, and statistics surfaces can reuse.
+7. Preserve first-class RTL/LTR behavior using logical CSS properties.
+8. Verify the shell, brand assets, icon semantics, theme behavior, responsive behavior, and directional semantics at unit/structural/browser layers.
+9. Add and use the repository engineering/design skills discussed for this product: `svg-foundry`, `ui-ux-pro-max`, and the existing `rtl-css`, plus only other relevant skills that materially improve the implementation without becoming runtime dependencies.
 
 ## Non-goals
 
@@ -26,10 +30,12 @@ The current app still uses a foundation-only shell and a small token set. Existi
 - No database, Supabase, model API, or file/image upload flow.
 - No production deployment or merge.
 - No generic redesign outside the approved IYAAZ visual direction.
+- No emoji as product/application icons.
+- No oversized generic marketing cards, excessive centered content, or decorative AI-style gradients used as a substitute for information hierarchy.
 
 ## Visual Direction
 
-The visual system is editorial, data-dense, premium, and restrained. It uses selective glass/translucency instead of applying glass effects to every surface.
+The design direction is **Data-dense + Drill-down + Editorial + Selective Glassmorphism**. The interface should feel premium and deliberate, but remain efficient for a large searchable library. Selective glass, fog, translucency, and blur may be used for identity moments and hierarchy; they must not be applied indiscriminately to every surface.
 
 Core identity colors:
 
@@ -40,11 +46,35 @@ Supporting tones may be derived from those anchors for foreground, muted text, b
 
 The approved mark reads as a geometric folded ribbon/loop with a compact central gem/play/directional cue. It should not introduce robots, chat bubbles, sparkles, or unrelated AI motifs.
 
-## 4A — Canonical SVG Identity
+Dense application surfaces added in later phases should inherit this system without becoming giant rounded-card dashboards. The design system must support compact rows, drill-down panels, filters, search results, detail views, breadcrumbs, keyboard focus, and no-results states without forcing those Phase 5 features into Phase 4.
+
+## Phase 4 Tooling and Repository Skills
+
+Phase 4 must use repository-backed skills as implementation aids, not as runtime product dependencies.
+
+Required:
+
+- keep and use `skills/rtl-css` for logical-property and RTL auditing;
+- inspect the user-provided `svg-foundry` skill package and add the usable skill to the repository before canonical SVG production;
+- add/use `ui-ux-pro-max` for design-system and UI-quality review when its source is available through the approved skill/plugin workflow;
+- add other discussed skills such as `web-artifacts-builder` or `writing-skills` only when they have a concrete role in this phase and do not introduce unnecessary runtime code.
+
+Skill files belong under `skills/` and must not weaken repository CI, security boundaries, or the requirement that GitHub remains the engineering source of truth.
+
+## 4A — Canonical SVG Identity and Functional Icons
 
 ### Canonical geometry
 
 Create one canonical vector geometry for the mark, then derive all variants from it. Do not maintain unrelated hand-edited silhouettes across variants.
+
+The approved identity board is the authority for:
+
+- outer silhouette and proportions;
+- internal negative space;
+- central gem/play/directional cue position and scale;
+- ribbon overlaps and depth ordering;
+- amethyst/lavender reflection relationships;
+- transparency, fog, highlight, and shadow character.
 
 The canonical mark should use:
 
@@ -74,11 +104,27 @@ The canonical mark should use:
 
 Where a monochrome application icon or mark is required, prefer `currentColor` so the host component controls theme color. The full canonical gradient mark may keep explicit gradient colors.
 
+### Functional icon family
+
+The existing `IyaazIcon` boundary remains the application icon API, but the underlying icon family must be reviewed for a coherent IYAAZ visual language.
+
+Requirements:
+
+- custom SVG icons rather than emoji;
+- consistent viewBox, stroke/fill logic, optical weight, caps, joins, and spacing;
+- theme-aware `currentColor` for ordinary UI icons;
+- no hard-coded light/dark colors inside ordinary functional icons;
+- only semantically directional icons such as arrows/chevrons may mirror in RTL;
+- search, copy, favorite, history, theme, grid, list, info, warning, and similar semantic icons do not mirror merely because the locale changes;
+- icon-only controls require accessible names at the component boundary.
+
 ## 4B — Typography and Design Tokens
 
 ### Typography
 
-Use the user-provided Thmanyah Serif Display files already available to the project work context. The repository implementation should keep only the font files required for the selected weights/styles and use a local font loader appropriate to Next.js.
+Use the user-provided Thmanyah Serif Display files already available to the project work context. Use a local font loader appropriate to Next.js and do not make external font-network requests.
+
+Before committing font binaries to this public repository, confirm that the provided files may legally be redistributed from the repository. If redistribution is not permitted, keep the typography integration path ready and use a legal local/system fallback until a redistributable package is supplied; do not silently replace the approved typography direction.
 
 Typography roles:
 
@@ -94,7 +140,7 @@ Define semantic CSS custom properties instead of hard-coding colors in component
 - brand
 - page background
 - elevated surface
-- glass surface
+- glass/fog surface
 - strong/soft borders
 - primary/secondary/muted text
 - interactive foreground/background
@@ -156,7 +202,7 @@ Header behavior:
 - keyboard-visible focus states;
 - no horizontal overflow.
 
-The Phase 4 home content remains intentionally limited. It may be restyled to demonstrate the design system, but must not become the Phase 5 library explorer.
+The Phase 4 home content remains intentionally limited. It may be restyled to demonstrate the design system, but must not become the Phase 5 library explorer. It must avoid excessive centered composition and generic gradient hero treatment; the shell should demonstrate the editorial/data-dense direction that later drill-down screens will use.
 
 ## 4E — RTL/LTR and Responsive Verification
 
@@ -198,6 +244,8 @@ Add focused tests for:
 - theme preference normalization and initial resolution logic;
 - semantic directional-icon behavior;
 - canonical SVG asset requirements and absence of embedded raster data;
+- shared canonical geometry/variant consistency where practical;
+- functional icon `currentColor`/directional semantics;
 - RTL logical-property audit.
 
 ### Browser E2E
@@ -211,7 +259,8 @@ Playwright must verify the running production build for:
 - system fallback is honored when no saved preference exists;
 - brand/header controls are present and keyboard reachable;
 - no horizontal overflow across the required viewport matrix;
-- responsive header remains usable on mobile and desktop.
+- responsive header remains usable on mobile and desktop;
+- icon mirroring is selective rather than global.
 
 Final CI must run logic/data/SVG/RTL tests, lint, TypeScript, production build, and browser E2E against the same candidate SHA.
 
@@ -219,11 +268,11 @@ Final CI must run logic/data/SVG/RTL tests, lint, TypeScript, production build, 
 
 ### 4A
 
-Canonicalize SVG mark geometry and lockups. Add asset regression checks.
+Add/verify the Phase 4 repository skills needed for SVG/UI review, canonicalize SVG mark geometry and lockups from the approved board, review the custom functional icon family, and add asset regression checks.
 
 ### 4B
 
-Add typography integration and semantic design tokens.
+Add typography integration and semantic design tokens, subject to the font redistribution gate above.
 
 ### 4C
 
@@ -243,11 +292,16 @@ Each subphase should be independently reviewable and should keep the existing ta
 
 Phase 4 is complete only when all of the following are true:
 
+- the approved conversation identity board is treated as the visual source of truth;
 - canonical SVG and all required variants are committed;
 - variants derive from consistent geometry and pass asset checks;
 - approved brand colors remain the visual anchors;
-- provided local typography is wired without external font requests;
+- `svg-foundry`, `ui-ux-pro-max` (when available through the approved source), and `rtl-css` are incorporated/used as specified rather than ignored;
+- the functional application icon family is custom, coherent, theme-aware, free of emoji, and selectively directional;
+- provided local typography is wired without external font requests when redistribution permits repository inclusion, otherwise the redistribution limitation is explicitly recorded without silently changing the design direction;
 - semantic light/dark tokens exist and components use them;
+- selective glass/fog/transparency is used intentionally rather than as a universal card treatment;
+- the UI avoids generic AI purple-gradient backgrounds, giant rounded-card composition, and excessive centering;
 - initial theme does not visibly flash the wrong mode in the verified browser flow;
 - preference persists across reloads;
 - reusable application shell replaces the temporary foundation navigation structure;
@@ -264,13 +318,13 @@ Phase 4 is complete only when all of the following are true:
 
 Risk: reproducing translucent depth with excessive filters can make the mark blurry or inconsistent at small sizes.
 
-Mitigation: geometry first, highlights second, restrained filters last; test favicon/small-mark variants separately.
+Mitigation: geometry first, highlights second, restrained filters last; test favicon/small-mark variants separately and compare the result against the approved board rather than the temporary repository SVG.
 
-### Font rendering
+### Font rendering and redistribution
 
-Risk: display fonts may reduce legibility in dense UI text or have incomplete Latin behavior.
+Risk: display fonts may reduce legibility in dense UI text, have incomplete Latin behavior, or have redistribution terms that do not permit committing binaries to a public repository.
 
-Mitigation: restrict the display face to brand/display roles and retain a readable UI/body fallback stack.
+Mitigation: restrict the display face to brand/display roles, retain a readable UI/body fallback stack, and verify redistribution permission before committing font binaries.
 
 ### Theme flash
 
@@ -280,9 +334,20 @@ Mitigation: pre-hydration bootstrap reads the saved/system preference before fir
 
 ### RTL regressions
 
-Risk: shell refactoring can reintroduce physical direction assumptions.
+Risk: shell refactoring can reintroduce physical direction assumptions or globally mirror icons that should remain unchanged.
 
-Mitigation: logical-property audit plus browser verification in both directions at all required widths.
+Mitigation: logical-property audit plus semantic icon-mirroring tests and browser verification in both directions at all required widths.
+
+## Later-phase Requirements Preserved Outside Phase 4
+
+The following project requirements remain binding but intentionally belong to later phases rather than being pulled into this design-system phase:
+
+- Phase 5: library explorer/detail surfaces and Dynamic Prompt Builder with conditional fields, fixed-value selects, manual attachment guidance, and copy-ready prompt output;
+- Phase 6: favorites, history, local client profiles, landing/docs/workbook-derived statistics;
+- Phase 7: `private | shared | public` access modes plus SEO/GEO/REO;
+- final verification: broader responsive/user-story review and preview/promotion gates.
+
+Keeping these outside Phase 4 is scope control, not removal from the product requirements.
 
 ## Deployment and Review Boundary
 
