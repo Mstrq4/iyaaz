@@ -1,0 +1,137 @@
+@font-face {
+  font-family: "Iyaaz Thmanyah Local";
+  src:
+    local("Thmanyah Serif Display"),
+    local("Thmanyah Serif Display Regular"),
+    local("Thmanyah Serif");
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Locked brand colors */
+  --brand-amethyst: #3e1848;
+  --brand-whisper-lavender: #e7e6f5;
+  --brand-amethyst-deep: #2a0d32;
+  --brand-amethyst-soft: #7f4d8c;
+  --brand-lavender-soft: #f1f0f8;
+
+  /* Semantic color tokens: light */
+  --color-bg-canvas: #f7f6fb;
+  --color-bg-subtle: #efedf7;
+  --color-surface-solid: #ffffff;
+  --color-surface-glass: rgba(255, 255, 255, 0.72);
+  --color-surface-glass-strong: rgba(255, 255, 255, 0.88);
+  --color-text-primary: #241028;
+  --color-text-secondary: #6b5b70;
+  --color-text-inverse: #fbf9ff;
+  --color-border-subtle: rgba(62, 24, 72, 0.14);
+  --color-border-strong: rgba(62, 24, 72, 0.26);
+  --color-focus-ring: #7f4d8c;
+  --color-accent: #3e1848;
+  --color-accent-soft: rgba(62, 24, 72, 0.1);
+  --color-ambient-glow: rgba(255, 255, 255, 0.92);
+  --color-selection: rgba(127, 77, 140, 0.22);
+
+  /* Glass and elevation */
+  --glass-blur: 1.25rem;
+  --glass-saturate: 135%;
+  --shadow-1: 0 0.5rem 1.5rem rgba(46, 20, 53, 0.06);
+  --shadow-2: 0 1rem 3rem rgba(46, 20, 53, 0.1);
+  --shadow-focus: 0 0 0 0.25rem rgba(127, 77, 140, 0.2);
+
+  /* Typography */
+  --font-display: "Iyaaz Thmanyah Local", "Thmanyah Serif Display", "Noto Naskh Arabic", Georgia, serif;
+  --font-body: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-body: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-display: clamp(2.25rem, 7vw, 5.75rem);
+  --line-tight: 1.08;
+  --line-heading: 1.18;
+  --line-body: 1.65;
+
+  /* 4/8-based spatial rhythm */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Shape */
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --motion-fast: 120ms;
+  --motion-standard: 180ms;
+  --motion-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-distance: 0.5rem;
+
+  /* Layout and interaction */
+  --content-reading: 68ch;
+  --content-shell: 90rem;
+  --content-wide: 120rem;
+  --gutter-inline: clamp(0.75rem, 2.4vw, 2rem);
+  --touch-target: 2.75rem;
+  --focus-width: 0.1875rem;
+  --focus-offset: 0.1875rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.25rem;
+  --icon-lg: 1.5rem;
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-overlay: 60;
+  --z-modal: 100;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg-canvas: #120b15;
+  --color-bg-subtle: #1a1020;
+  --color-surface-solid: #211527;
+  --color-surface-glass: rgba(38, 22, 44, 0.72);
+  --color-surface-glass-strong: rgba(38, 22, 44, 0.9);
+  --color-text-primary: #fbf9ff;
+  --color-text-secondary: #b8abbc;
+  --color-text-inverse: #241028;
+  --color-border-subtle: rgba(231, 230, 245, 0.16);
+  --color-border-strong: rgba(231, 230, 245, 0.3);
+  --color-focus-ring: #d8b5e0;
+  --color-accent: #d8b5e0;
+  --color-accent-soft: rgba(216, 181, 224, 0.12);
+  --color-ambient-glow: rgba(87, 46, 97, 0.28);
+  --color-selection: rgba(216, 181, 224, 0.24);
+  --shadow-1: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.18);
+  --shadow-2: 0 1rem 3rem rgba(0, 0, 0, 0.28);
+  --shadow-focus: 0 0 0 0.25rem rgba(216, 181, 224, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-standard: 0ms;
+    --motion-slow: 0ms;
+    --motion-distance: 0rem;
+  }
+}
