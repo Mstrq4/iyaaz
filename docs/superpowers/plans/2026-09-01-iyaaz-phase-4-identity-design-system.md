@@ -4,7 +4,7 @@
 
 **Goal:** Replace the temporary IYAAZ visual foundation with a canonical SVG identity, coherent custom icons, semantic light/dark design tokens, safe typography handling, a reusable bilingual application shell, and verified RTL/LTR responsive behavior.
 
-**Architecture:** Keep Phase 3 data/search/server contracts untouched. Phase 4 is a presentation-system layer: static brand/icon assets in `public/`, pure theme/direction helpers in `src/lib/`, reusable shell components in `src/components/`, semantic tokens in `src/app/globals.css`, and Playwright as the highest behavioral verification layer. The approved identity board is the visual authority; repository skills support design/engineering work but are never runtime dependencies.
+**Architecture:** Keep all Phase 3 data/search/server contracts unchanged. Phase 4 is a presentation-system layer: static brand/icon assets in `public/`, pure theme/direction helpers in `src/lib/`, reusable shell components in `src/components/`, semantic tokens in `src/app/globals.css`, and Playwright as the highest behavioral verification layer. Repository skills are development aids only and are never runtime dependencies.
 
 **Tech Stack:** Next.js 16.3.3, React 19.2.0, TypeScript 5.8+, CSS custom properties/logical properties, SVG, Node test runner, Python `unittest`, Playwright 1.55+, GitHub Actions.
 
@@ -12,84 +12,62 @@
 
 ## Global Constraints
 
-- Continue on repository `Mstrq4/iyaaz`, branch `feat/iyaaz-platform`, PR #1; do not create a replacement branch or PR.
-- Approved identity board from the project conversation is the visual source of truth; existing SVG assets are temporary engineering references.
+- Repository: `Mstrq4/iyaaz`; branch: `feat/iyaaz-platform`; reuse PR #1.
+- Approved identity board from the project conversation is the visual source of truth. Existing SVG files are temporary references only.
 - Visual direction: **Data-dense + Drill-down + Editorial + Selective Glassmorphism**.
-- Brand anchors are Deep Amethyst `#3E1848` and Whisper Lavender `#E7E6F5`.
-- No generic AI purple-gradient page treatment, no emoji product icons, no giant rounded-card dashboard composition, and no excessive centered content.
-- Arabic and English are first-class. New CSS uses logical properties and passes `npm run test:rtl`.
+- Exact brand anchors: Deep Amethyst `#3E1848`, Whisper Lavender `#E7E6F5`.
+- No emoji product icons, generic AI purple-gradient page backgrounds, giant rounded-card dashboards, or excessive centered content.
+- Arabic/English are first-class; use logical CSS properties and pass `npm run test:rtl`.
 - Only semantically directional icons mirror in RTL.
 - No database/Supabase, AI model API, or file/image upload flow.
-- Do not change `data/library.snapshot.json`, the Phase 3 search contract, or API semantics during Phase 4.
-- Thmanyah Serif Display remains the intended display face, but its official usage terms prohibit redistributing/uploading/hosting the font files. Do not commit or serve the provided WOFF2 binaries. Use a `local("Thmanyah Serif Display")`-first display stack plus a legal fallback unless a separately permitted first-party web delivery mechanism is established later.
-- Never expose or provide the uploaded font binaries as artifacts.
-- Merge to `main` and Production deployment remain explicit user approval gates.
-- At the end of each subphase `4A`, `4B`, `4C`, `4D`, and `4E`, update the existing PR with evidence, report to the user, state the next subphase, and STOP until the user sends `تابع`.
+- Do not modify `data/library.snapshot.json`, search semantics, taxonomy semantics, or Phase 3 API contracts.
+- Thmanyah Serif Display remains the intended display face. Official Thmanyah terms prohibit redistributing/uploading/hosting the font files, so do not commit or serve the uploaded WOFF2 binaries. Use a `local("Thmanyah Serif Display")`-first display stack with a legal fallback. Exact production Thmanyah rendering remains unavailable until a separately permitted delivery method exists.
+- Never expose or return the uploaded font binaries as artifacts.
+- Merge and Production deployment remain explicit approval gates.
+- After each subphase `4A`, `4B`, `4C`, `4D`, `4E`: update PR evidence, report status, state the next subphase, and STOP until the user sends `تابع`.
 
-## File Structure Map
+## File Structure
 
-### Repository skills
+**Skills**
+- Create `skills/svg-foundry/` from the user-provided Apache-2.0 package.
+- Create `skills/svg-foundry/UPSTREAM.md`.
+- Create `skills/ui-ux-pro-max/` from `nextlevelbuilder/ui-ux-pro-max-skill` commit `f23267105ad1f4ccd94af45d382584ad45b586f7` (MIT).
+- Create `skills/ui-ux-pro-max/UPSTREAM.md`.
+- Create `tests/test_phase4_skills.py`.
 
-- `skills/svg-foundry/` — vendored user-provided Apache-2.0 SVG Foundry skill, including its `SKILL.md`, license, and referenced knowledge files required by that skill.
-- `skills/svg-foundry/UPSTREAM.md` — source/provenance note for the supplied archive (`ffbf523c6e8767bcf2ab13a370706cff554cd462`).
-- `skills/ui-ux-pro-max/` — vendored canonical UI UX Pro Max skill content from `nextlevelbuilder/ui-ux-pro-max-skill`, pinned to upstream commit `f23267105ad1f4ccd94af45d382584ad45b586f7`.
-- `skills/ui-ux-pro-max/UPSTREAM.md` — source, commit, and MIT license provenance.
-- `tests/test_phase4_skills.py` — validates that the required skill entrypoints/provenance files are present.
+**Identity and icons**
+- Modify all eight `public/brand/*.svg` assets already present.
+- Modify `public/icons/iyaaz-icons.svg`.
+- Modify `src/components/brand/IyaazLogo.tsx`.
+- Create `src/lib/icons.ts`.
+- Modify `src/components/icons/IyaazIcon.tsx`.
+- Create `tests/test_brand_assets.py`.
+- Create `tests/ts/icon-direction.test.ts`.
 
-### Brand and icons
-
-- `public/brand/mark-gradient.svg` — canonical full-depth mark.
-- `public/brand/mark-dark.svg` — monochrome dark mark using the exact canonical core geometry.
-- `public/brand/mark-light.svg` — monochrome light mark using the exact canonical core geometry.
-- `public/brand/favicon.svg` — small-size simplified derivative of the canonical geometry.
-- `public/brand/lockup-horizontal-dark.svg`
-- `public/brand/lockup-horizontal-light.svg`
-- `public/brand/lockup-stacked-dark.svg`
-- `public/brand/lockup-stacked-light.svg`
-- `public/icons/iyaaz-icons.svg` — coherent functional icon sprite using `currentColor`.
-- `src/components/brand/IyaazLogo.tsx` — React boundary for brand assets.
-- `src/lib/icons.ts` — icon names and semantic direction metadata.
-- `src/components/icons/IyaazIcon.tsx` — renders icons and applies direction class from metadata.
-- `tests/test_brand_assets.py` — XML-level asset contract.
-- `tests/ts/icon-direction.test.ts` — semantic direction regression tests.
-
-### Design system and theme
-
-- `src/app/globals.css` — semantic tokens, theme values, layout primitives, focus/motion rules.
-- `src/lib/theme.ts` — pure theme parsing/resolution/toggle logic and storage key.
-- `src/components/theme/ThemeBootstrap.tsx` — pre-hydration theme initialization script.
-- `src/components/theme/ThemeToggle.tsx` — client toggle with state-reflective icon behavior.
-- `tests/ts/theme.test.ts` — expanded theme logic tests.
-
-### Shell
-
-- `src/components/shell/AppShell.tsx` — page chrome/layout wrapper.
-- `src/components/shell/AppHeader.tsx` — responsive header.
-- `src/components/shell/BrandLink.tsx` — logo + bilingual wordmark link.
-- `src/components/shell/LocaleSwitch.tsx` — alternate locale link.
-- `src/lib/i18n.ts` — adds shell labels while preserving locale helpers.
-- `src/app/[locale]/layout.tsx` — installs ThemeBootstrap in the document.
-- `src/app/[locale]/page.tsx` — migrates temporary foundation markup to AppShell.
-- `tests/e2e/shell.spec.ts` — direction, theme, keyboard, shell, and viewport matrix verification.
+**Tokens/theme/shell**
+- Modify `src/app/globals.css`.
+- Modify `src/lib/theme.ts`.
+- Create `src/components/theme/ThemeBootstrap.tsx`.
+- Modify `src/components/theme/ThemeToggle.tsx`.
+- Create `src/components/shell/AppShell.tsx`.
+- Create `src/components/shell/AppHeader.tsx`.
+- Create `src/components/shell/BrandLink.tsx`.
+- Create `src/components/shell/LocaleSwitch.tsx`.
+- Modify `src/lib/i18n.ts`.
+- Modify `src/app/[locale]/layout.tsx`.
+- Modify `src/app/[locale]/page.tsx`.
+- Modify `tests/ts/theme.test.ts`.
+- Modify `tests/e2e/shell.spec.ts`.
 
 ---
 
-## Task 1: 4A — Vendor the Required Design Skills
+## Task 1: 4A — Vendor Required Design Skills
 
-**Files:**
-- Create: `skills/svg-foundry/**`
-- Create: `skills/svg-foundry/UPSTREAM.md`
-- Create: `skills/ui-ux-pro-max/**`
-- Create: `skills/ui-ux-pro-max/UPSTREAM.md`
-- Create: `tests/test_phase4_skills.py`
+**Files:** `skills/svg-foundry/**`, `skills/ui-ux-pro-max/**`, provenance files, `tests/test_phase4_skills.py`.
 
-**Interfaces:**
-- Consumes: user-provided `/mnt/data/svg-foundry-skill-main.zip`; canonical UI UX Pro Max upstream skill at `.claude/skills/ui-ux-pro-max/` pinned to `f23267105ad1f4ccd94af45d382584ad45b586f7`.
-- Produces: repository-local design skills available to later Phase 4 tasks; no runtime imports.
+**Produces:** repository-local design guidance with pinned provenance and no runtime import.
 
-- [ ] **Step 1: Write the failing skill-presence test**
-
-Create `tests/test_phase4_skills.py` using the repository's `unittest` convention:
+- [ ] **Step 1: Write RED skill-presence tests**
 
 ```python
 from pathlib import Path
@@ -100,10 +78,9 @@ ROOT = Path(__file__).resolve().parents[1]
 class Phase4SkillTests(unittest.TestCase):
     def test_required_design_skills_are_vendored(self) -> None:
         for name in ("svg-foundry", "ui-ux-pro-max", "rtl-css"):
-            self.assertTrue((ROOT / "skills" / name).is_dir(), name)
             self.assertTrue((ROOT / "skills" / name / "SKILL.md").is_file(), name)
 
-    def test_vendored_phase4_skills_record_provenance(self) -> None:
+    def test_new_skills_record_provenance(self) -> None:
         for name in ("svg-foundry", "ui-ux-pro-max"):
             self.assertTrue((ROOT / "skills" / name / "UPSTREAM.md").is_file(), name)
 
@@ -111,78 +88,50 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Push RED and verify the new test fails for the missing skills**
+- [ ] **Step 2: Commit the test and verify remote RED**
 
-Run remotely through the existing CI contract after committing only the test. Expected: existing tests stay green; `test_required_design_skills_are_vendored` fails because `skills/svg-foundry` and `skills/ui-ux-pro-max` do not yet exist.
+Expected failure: `skills/svg-foundry/SKILL.md` and `skills/ui-ux-pro-max/SKILL.md` do not exist. Existing tests must remain green.
 
-- [ ] **Step 3: Vendor SVG Foundry from the supplied archive**
+- [ ] **Step 3: Vendor SVG Foundry**
 
-Copy the skill package into `skills/svg-foundry/`, preserving `SKILL.md`, `LICENSE`, the referenced `references/` knowledge files, and any assets/docs the skill requires to resolve its own references. Do not add the ZIP itself.
+Extract the supplied package into `skills/svg-foundry/`; keep `SKILL.md`, `LICENSE`, `README.md`, referenced `references/`, and any package assets/docs required by its own instructions. Do not commit the ZIP.
 
-Create `skills/svg-foundry/UPSTREAM.md`:
+`skills/svg-foundry/UPSTREAM.md` must record:
+- supplied archive name;
+- source commit `ffbf523c6e8767bcf2ab13a370706cff554cd462`;
+- Apache-2.0 license;
+- development-only purpose.
 
-```markdown
-# Upstream provenance
+- [ ] **Step 4: Vendor UI UX Pro Max**
 
-Source: user-provided `svg-foundry-skill-main.zip`
-Source commit recorded by archive: `ffbf523c6e8767bcf2ab13a370706cff554cd462`
-License: Apache-2.0 (see `LICENSE`)
-Purpose in IYAAZ: SVG identity/icon creation and review only; not a runtime dependency.
-```
+Copy the complete upstream `.claude/skills/ui-ux-pro-max/` skill tree from commit `f23267105ad1f4ccd94af45d382584ad45b586f7` into `skills/ui-ux-pro-max/`. Preserve required data/references/scripts and the MIT notice.
 
-- [ ] **Step 4: Vendor the pinned UI UX Pro Max skill**
+`skills/ui-ux-pro-max/UPSTREAM.md` must record repository, pinned commit, MIT license, and development-only purpose.
 
-Copy the canonical upstream `.claude/skills/ui-ux-pro-max/` directory from commit `f23267105ad1f4ccd94af45d382584ad45b586f7` into `skills/ui-ux-pro-max/`. Preserve the upstream skill data/references/scripts required by `SKILL.md`.
-
-Create `skills/ui-ux-pro-max/UPSTREAM.md`:
-
-```markdown
-# Upstream provenance
-
-Repository: `nextlevelbuilder/ui-ux-pro-max-skill`
-Pinned commit: `f23267105ad1f4ccd94af45d382584ad45b586f7`
-Upstream license: MIT
-Purpose in IYAAZ: design-system/UI review only; not a runtime dependency.
-```
-
-Keep an MIT license notice inside the vendored skill directory.
-
-- [ ] **Step 5: Run focused tests and repository tests**
-
-Run:
+- [ ] **Step 5: Verify GREEN**
 
 ```bash
 python3 -m unittest tests.test_phase4_skills -v
 npm test
 ```
 
-Expected: skill tests PASS and existing data/RTL tests remain PASS.
+Expected: PASS.
 
-- [ ] **Step 6: Commit GREEN**
+- [ ] **Step 6: Commit**
 
-```bash
-git add skills/svg-foundry skills/ui-ux-pro-max tests/test_phase4_skills.py
-git commit -m "chore: add Phase 4 design skills"
-```
+Commit message: `chore: add Phase 4 design skills`.
 
-Continue within 4A; do not stop yet because the user-approved 4A deliverable is the canonical identity, not skill vendoring alone.
+Continue inside 4A; do not report 4A complete yet.
 
 ---
 
-## Task 2: 4A — Establish the Brand and Icon Contract with RED Tests
+## Task 2: 4A — Define Identity and Icon Contracts with RED Tests
 
-**Files:**
-- Create: `tests/test_brand_assets.py`
-- Create: `tests/ts/icon-direction.test.ts`
-- Create: `src/lib/icons.ts`
-- Modify later in Task 3: `public/brand/*.svg`, `public/icons/iyaaz-icons.svg`, `src/components/icons/IyaazIcon.tsx`, `src/components/brand/IyaazLogo.tsx`
+**Files:** create `src/lib/icons.ts`, `tests/ts/icon-direction.test.ts`, `tests/test_brand_assets.py`.
 
-**Interfaces:**
-- Produces: `IyaazIconName`, `isDirectionalIcon(name)`, and an XML asset contract for all canonical brand files.
+**Produces:** `IyaazIconName`, `isDirectionalIcon(name)`, and automated SVG invariants.
 
-- [ ] **Step 1: Add the pure icon metadata contract**
-
-Create `src/lib/icons.ts` with the exact API:
+- [ ] **Step 1: Create semantic icon metadata**
 
 ```ts
 export const IYAAZ_ICON_NAMES = [
@@ -201,9 +150,7 @@ export function isDirectionalIcon(name: IyaazIconName): boolean {
 }
 ```
 
-- [ ] **Step 2: Write icon-direction tests before modifying the component**
-
-Create `tests/ts/icon-direction.test.ts`:
+- [ ] **Step 2: Add direction tests**
 
 ```ts
 import assert from 'node:assert/strict';
@@ -219,139 +166,59 @@ test('only semantic navigation arrows mirror in RTL', () => {
 });
 ```
 
-- [ ] **Step 3: Write the canonical SVG asset tests**
+- [ ] **Step 3: Add brand-asset XML tests**
 
-Create `tests/test_brand_assets.py`. The test must parse XML with `xml.etree.ElementTree` and verify:
+`tests/test_brand_assets.py` uses `xml.etree.ElementTree` and checks:
+1. all eight required brand SVG files exist and parse;
+2. each root has `viewBox` and no fixed root `width`/`height`;
+3. no `<image>`, `data:image`, or embedded raster content;
+4. `mark-gradient.svg`, `mark-dark.svg`, `mark-light.svg` all have `data-geometry="iyaaz-ribbon-v2"`;
+5. those three files each have `path[data-role="ribbon-core"]` and `path[data-role="gem-core"]`, with identical core `d` values across variants;
+6. gradient mark contains SVG gradient definitions and at least one explicit highlight/reflection layer with opacity below 1;
+7. all lockups contain zero `<text>` nodes;
+8. functional icon sprite contains `currentColor` and no raster data.
 
-```python
-REQUIRED = (
-    "mark-gradient.svg", "mark-dark.svg", "mark-light.svg", "favicon.svg",
-    "lockup-horizontal-dark.svg", "lockup-horizontal-light.svg",
-    "lockup-stacked-dark.svg", "lockup-stacked-light.svg",
-)
-```
+- [ ] **Step 4: Commit and verify RED**
 
-Assertions:
+Commit message: `test: define Phase 4 identity contract`.
 
-1. every required asset exists and parses as SVG;
-2. root has a `viewBox` and does not have fixed `width`/`height` attributes;
-3. no asset contains an SVG `<image>` element or `data:image`/base64 raster content;
-4. all three mark variants expose the same `data-geometry="iyaaz-ribbon-v2"` identifier;
-5. all three mark variants contain `path[data-role="ribbon-core"]` and `path[data-role="gem-core"]`, and the `d` values of those two canonical paths are identical across gradient/dark/light variants;
-6. `mark-gradient.svg` contains gradient definitions plus at least one restrained highlight/opacity layer;
-7. lockup SVGs contain no `<text>` elements, so brand lockups do not depend on redistributing the Thmanyah font;
-8. functional icon sprite uses `currentColor` and contains no emoji/raster image data.
-
-- [ ] **Step 4: Push RED and inspect the first meaningful failure**
-
-Expected RED reasons on the existing assets: missing `data-geometry`/`data-role` contract, existing lockups still use `<text>`, and the icon component still owns the icon-name union/directional flag manually.
-
-- [ ] **Step 5: Commit the RED contract**
-
-```bash
-git add src/lib/icons.ts tests/ts/icon-direction.test.ts tests/test_brand_assets.py
-git commit -m "test: define Phase 4 identity contract"
-```
+Expected current-asset failures: geometry metadata absent and lockups contain `<text>`.
 
 ---
 
-## Task 3: 4A — Rebuild the Canonical Identity and Functional Icon Family
+## Task 3: 4A — Rebuild Canonical Identity and Functional Icons
 
-**Files:**
-- Modify: `public/brand/mark-gradient.svg`
-- Modify: `public/brand/mark-dark.svg`
-- Modify: `public/brand/mark-light.svg`
-- Modify: `public/brand/favicon.svg`
-- Modify: `public/brand/lockup-horizontal-dark.svg`
-- Modify: `public/brand/lockup-horizontal-light.svg`
-- Modify: `public/brand/lockup-stacked-dark.svg`
-- Modify: `public/brand/lockup-stacked-light.svg`
-- Modify: `public/icons/iyaaz-icons.svg`
-- Modify: `src/components/brand/IyaazLogo.tsx`
-- Modify: `src/components/icons/IyaazIcon.tsx`
+**Files:** all existing `public/brand/*.svg`, `public/icons/iyaaz-icons.svg`, `IyaazLogo.tsx`, `IyaazIcon.tsx`.
 
-**Interfaces:**
-- Consumes: approved identity board; SVG Foundry; UI UX Pro Max review guidance; `IyaazIconName` and `isDirectionalIcon` from Task 2.
-- Produces: canonical geometry id `iyaaz-ribbon-v2`, all brand variants, and automatic semantic direction behavior.
+**Consumes:** approved identity board, SVG Foundry, UI UX Pro Max guidance, Task 2 contracts.
 
-- [ ] **Step 1: Trace geometry from the approved board, not from the temporary SVG**
+- [ ] **Step 1: Reconstruct canonical geometry from the approved board**
 
-Use the approved board to reconstruct the folded ribbon silhouette, negative space, central gem, overlap order, and edge proportions. The existing `118 × 163` viewBox may be retained only if it fits the approved proportions; otherwise change the canonical viewBox once and apply that exact viewBox to all mark variants.
+Trace the approved folded-ribbon silhouette and central gem using vector paths. Determine one canonical `viewBox` from the traced proportions. Assign `data-geometry="iyaaz-ribbon-v2"` to all three mark variants, `data-role="ribbon-core"` to the outer/core ribbon path, and `data-role="gem-core"` to the central cue path. After tracing, copy those two exact path `d` strings unchanged into gradient/dark/light variants.
 
-The canonical files must expose this structure:
+Geometry acceptance is visual: silhouette, negative space, gem placement, fold ordering, and proportions must match the approved board more closely than the temporary SVG.
 
-```xml
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="..."
-     data-geometry="iyaaz-ribbon-v2"
-     role="img"
-     aria-labelledby="title desc">
-  <title id="title">IYAAZ mark</title>
-  <desc id="desc">Geometric amethyst and lavender folded ribbon identity mark.</desc>
-  <defs>...</defs>
-  <path data-role="ribbon-core" d="..." />
-  <path data-role="gem-core" d="..." />
-  <!-- gradient variant only: controlled highlight/reflection layers -->
-</svg>
-```
+- [ ] **Step 2: Build the gradient/depth variant**
 
-The final `d` strings are determined by the traced approved geometry and are then copied unchanged into gradient/dark/light variants; visual styling differs, geometry does not.
+Use the exact anchors `#3E1848` and `#E7E6F5`, layered linear/radial gradients, restrained translucent highlights, and tightly bounded SVG filters only where needed. Do not use embedded raster images. Keep edges crisp at 48px and depth readable at 320px.
 
-- [ ] **Step 2: Build the gradient/depth treatment**
+- [ ] **Step 3: Derive dark/light/favicons**
 
-Use layered linear/radial gradients and restrained masks/filters to reproduce the board's glossy/translucent amethyst/lavender ribbon. Keep blur regions tight and avoid a global soft/drop-shadow treatment that makes small rendering muddy.
+Dark/light assets reuse exact core geometry. Since `IyaazLogo` loads standalone SVG files with `next/image`, use explicit brand fills in these external SVGs rather than assuming parent `currentColor` inheritance. Simplify only nonessential reflections for favicon scale.
 
-Required color anchors must be present in the full mark: `#3E1848` and `#E7E6F5`.
+- [ ] **Step 4: Convert lockup lettering to vector outlines**
 
-- [ ] **Step 3: Derive monochrome and favicon variants**
+Remove live `<text>` from all four lockups. Use static outline paths for the approved Arabic/English wordmark appearance. Do not embed, base64-encode, copy, or serve Thmanyah font binaries.
 
-`mark-dark.svg` and `mark-light.svg` reuse the exact core `d` strings. Because `IyaazLogo` currently loads standalone SVG files through `next/image`, do not rely on host-element `currentColor` inheritance inside those external files; use explicit theme-safe fills for these standalone brand assets. Reserve `currentColor` for inline/application icon SVGs.
+- [ ] **Step 5: Normalize the icon sprite**
 
-Simplify only nonessential highlight/filter layers for `favicon.svg`; preserve recognizability at small size.
+Keep all existing icon IDs. Use `viewBox="0 0 24 24"`, `currentColor`, consistent optical weight, and coherent caps/joins. No emoji or hard-coded theme colors in ordinary functional icons.
 
-- [ ] **Step 4: Rebuild lockups without live `<text>`**
+- [ ] **Step 6: Update `IyaazIcon.tsx`**
 
-Use the approved wordmark appearance as vector outlines in the lockups. Do not embed/serve a font file and do not leave `<text font-family="Thmanyah...">` in the final lockup assets. The lockup outline paths are static brand artwork, not a webfont distribution mechanism.
-
-- [ ] **Step 5: Normalize the functional icon sprite**
-
-Keep the existing icon names so later phases do not break. Normalize all ordinary functional icons to `viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`, consistent optical stroke weight, round caps/joins where appropriate, and no hard-coded theme colors.
-
-- [ ] **Step 6: Make `IyaazIcon` semantic by default**
-
-Update `src/components/icons/IyaazIcon.tsx` to import the type and metadata:
-
-```tsx
-import type { SVGProps } from 'react';
-import { isDirectionalIcon, type IyaazIconName } from '@/lib/icons';
-
-interface Props extends Omit<SVGProps<SVGSVGElement>, 'name'> {
-  name: IyaazIconName;
-  label?: string;
-}
-
-export function IyaazIcon({ name, label, className = '', ...props }: Props) {
-  const classes = [
-    'iyaaz-icon',
-    isDirectionalIcon(name) ? 'is-directional' : '',
-    className,
-  ].filter(Boolean).join(' ');
-
-  return (
-    <svg viewBox="0 0 24 24" className={classes} role={label ? 'img' : undefined}
-      aria-hidden={label ? undefined : true} aria-label={label} {...props}>
-      {label ? <title>{label}</title> : null}
-      <use href={`/icons/iyaaz-icons.svg#${name}`} />
-    </svg>
-  );
-}
-```
-
-Remove the caller-controlled `directional` prop so mirroring cannot drift from semantic rules.
+Import `IyaazIconName` and `isDirectionalIcon` from `src/lib/icons.ts`; remove the caller-controlled `directional` prop. Add `is-directional` automatically when `isDirectionalIcon(name)` is true.
 
 - [ ] **Step 7: Run focused GREEN checks**
-
-Run:
 
 ```bash
 python3 -m unittest tests.test_brand_assets -v
@@ -362,42 +229,25 @@ npm run typecheck
 npm run build
 ```
 
-Expected: all PASS.
+Expected: PASS.
 
-- [ ] **Step 8: Perform visual QA against the approved board**
+- [ ] **Step 8: Perform visual QA**
 
-Render `/brand/mark-gradient.svg` at approximately 48px, 128px, and 320px and inspect for silhouette, internal negative space, gem placement, highlights, blur, and edge cleanliness. Attach screenshots to the Playwright/report evidence if practical. Structural tests cannot be presented as proof of visual fidelity by themselves.
+Render the canonical gradient mark at 48px, 128px, and 320px and compare it to the approved board for silhouette, negative space, gem position, reflections, transparency, blur, and edge quality. Save screenshots/report evidence where practical. Do not call structural XML tests proof of visual fidelity.
 
-- [ ] **Step 9: Commit 4A GREEN and run full CI**
+- [ ] **Step 9: Commit, run exact-SHA full CI, update PR, report 4A, STOP**
 
-```bash
-git add public/brand public/icons src/components/brand src/components/icons src/lib/icons.ts tests
-git commit -m "feat: establish canonical IYAAZ identity"
-```
-
-Record exact candidate SHA and wait for Push/PR quality + browser jobs. Update PR with 4A evidence.
-
-- [ ] **Step 10: STOP after the 4A report**
-
-Report PASS/FAIL/NOT VERIFIED precisely, state that 4B is next, and wait for the user's `تابع`.
+Commit message: `feat: establish canonical IYAAZ identity`.
 
 ---
 
-## Task 4: 4B — Semantic Tokens and Legally Safe Typography
+## Task 4: 4B — Semantic Design Tokens and Safe Typography
 
-**Files:**
-- Modify: `src/app/globals.css`
-- Optional only if a legally permitted delivery method is later established: a separate font integration file approved at that time.
-- Test: existing RTL audit plus browser rendering in Task 7.
+**Files:** modify `src/app/globals.css` only unless a defect proves another file is responsible.
 
-**Interfaces:**
-- Produces: semantic CSS variables consumed by shell/theme components.
+**Produces:** semantic color, type, spacing, radius, elevation, blur, focus, and motion tokens.
 
-- [ ] **Step 1: Record the typography delivery constraint before code**
-
-The official Thmanyah guidance permits use in websites/apps but explicitly prohibits redistributing, uploading, or hosting the font files. Therefore do **not** add the uploaded WOFF2 files to GitHub, `public/`, CSS base64, or any deployment asset.
-
-The CSS display stack must start with the locally installed font name so authorized local installations render it:
+- [ ] **Step 1: Define typography stacks without hosting the restricted font**
 
 ```css
 --font-display: "Thmanyah Serif Display", "Noto Naskh Arabic", Georgia, serif;
@@ -405,11 +255,9 @@ The CSS display stack must start with the locally installed font name so authori
 --font-code: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 ```
 
-Do not claim exact production Thmanyah rendering unless a legal delivery path is later verified.
+No `@font-face` points to the uploaded WOFF2 files.
 
-- [ ] **Step 2: Replace temporary color variables with semantic light-theme tokens**
-
-At minimum define:
+- [ ] **Step 2: Define light semantic tokens**
 
 ```css
 :root,
@@ -433,9 +281,7 @@ At minimum define:
 }
 ```
 
-Tune supporting values with UI UX Pro Max review, but keep the two brand anchors exact.
-
-- [ ] **Step 3: Define an authored dark palette, not inversion**
+- [ ] **Step 3: Define authored dark tokens**
 
 ```css
 :root[data-theme="dark"] {
@@ -452,7 +298,7 @@ Tune supporting values with UI UX Pro Max review, but keep the two brand anchors
 }
 ```
 
-- [ ] **Step 4: Add global focus, reduced-motion, and directional-icon rules**
+- [ ] **Step 4: Add focus, selective RTL mirroring, and reduced-motion rules**
 
 ```css
 :focus-visible {
@@ -474,9 +320,7 @@ html[dir="rtl"] .iyaaz-icon.is-directional {
 }
 ```
 
-Do not mirror `.iyaaz-icon` globally.
-
-- [ ] **Step 5: Run quality gates**
+- [ ] **Step 5: Run gates, commit, exact-SHA CI, update PR, report 4B, STOP**
 
 ```bash
 npm test
@@ -485,33 +329,19 @@ npm run typecheck
 npm run build
 ```
 
-- [ ] **Step 6: Commit and verify 4B**
+Commit message: `feat: add IYAAZ design tokens`.
 
-```bash
-git add src/app/globals.css
-git commit -m "feat: add IYAAZ design tokens"
-```
-
-Run exact-SHA CI, update PR, report the font runtime limitation explicitly if it remains, then STOP and wait for `تابع` before 4C.
+Report the Thmanyah runtime limitation explicitly as a licensing constraint, not as a missing implementation step.
 
 ---
 
-## Task 5: 4C — Pre-hydration Theme Resolution and Toggle
+## Task 5: 4C — Pre-hydration Theme Resolution and Persistent Toggle
 
-**Files:**
-- Modify: `src/lib/theme.ts`
-- Create: `src/components/theme/ThemeBootstrap.tsx`
-- Modify: `src/components/theme/ThemeToggle.tsx`
-- Modify: `src/app/[locale]/layout.tsx`
-- Modify: `tests/ts/theme.test.ts`
-- Later browser verification: `tests/e2e/shell.spec.ts`
+**Files:** `src/lib/theme.ts`, create `ThemeBootstrap.tsx`, modify `ThemeToggle.tsx`, `layout.tsx`, `tests/ts/theme.test.ts`.
 
-**Interfaces:**
-- Produces: `THEME_STORAGE_KEY`, `parseTheme`, `resolveTheme`, `nextTheme`, and the document bootstrap script.
+**Produces:** `THEME_STORAGE_KEY`, `parseTheme`, `resolveTheme`, `nextTheme`.
 
-- [ ] **Step 1: Expand theme tests first**
-
-Update `tests/ts/theme.test.ts` to assert:
+- [ ] **Step 1: Write RED theme tests**
 
 ```ts
 assert.equal(theme.parseTheme('light'), 'light');
@@ -524,11 +354,9 @@ assert.equal(theme.nextTheme('light'), 'dark');
 assert.equal(theme.nextTheme('dark'), 'light');
 ```
 
-Push RED before replacing the current `normalizeTheme` API.
+Commit and verify these fail because current `theme.ts` lacks `parseTheme`/`resolveTheme`.
 
-- [ ] **Step 2: Implement pure resolution logic**
-
-`src/lib/theme.ts`:
+- [ ] **Step 2: Implement pure theme helpers**
 
 ```ts
 export type Theme = 'light' | 'dark';
@@ -547,9 +375,9 @@ export function nextTheme(current: Theme): Theme {
 }
 ```
 
-- [ ] **Step 3: Create a pre-hydration bootstrap component**
+- [ ] **Step 3: Add static pre-hydration bootstrap**
 
-`ThemeBootstrap.tsx` must emit a small inline script in the document head/body before visible content. Its behavior is exactly:
+`ThemeBootstrap.tsx` emits a static inline script with exactly this behavior:
 
 ```js
 try {
@@ -562,17 +390,13 @@ try {
 }
 ```
 
-Keep the script static; do not interpolate user-controlled data.
+Render it before visible locale content.
 
-- [ ] **Step 4: Install ThemeBootstrap in locale layout**
+- [ ] **Step 4: Upgrade `ThemeToggle`**
 
-Render it before page content so `data-theme` is present before first visible paint. Keep `lang` and `dir` behavior unchanged.
+On click: parse current `data-theme`, fall back to `matchMedia`, toggle, write `data-theme`, persist `iyaaz:theme`. Render both sun/moon icons and use theme CSS to show the action appropriate to the current mode, avoiding hydration-dependent icon flash.
 
-- [ ] **Step 5: Upgrade ThemeToggle**
-
-On click, read `document.documentElement.dataset.theme` with `parseTheme`, resolve fallback from `matchMedia`, call `nextTheme`, write `data-theme`, and persist `iyaaz:theme`. Render sun/moon icons whose visibility is controlled by `[data-theme]` CSS so the icon reflects the current mode without waiting for hydration state.
-
-- [ ] **Step 6: Run RED/GREEN and full checks**
+- [ ] **Step 5: Run RED/GREEN gates, commit, CI, update PR, report 4C, STOP**
 
 ```bash
 npm run test:logic
@@ -582,58 +406,33 @@ npm run typecheck
 npm run build
 ```
 
-- [ ] **Step 7: Commit, CI, report, STOP**
-
-Commit message: `feat: add persistent theme resolution`. After exact-SHA CI and PR evidence, STOP before 4D.
+Commit message: `feat: add persistent theme resolution`.
 
 ---
 
-## Task 6: 4D — Build the Reusable Bilingual Application Shell
+## Task 6: 4D — Reusable Bilingual Application Shell
 
-**Files:**
-- Create: `src/components/shell/AppShell.tsx`
-- Create: `src/components/shell/AppHeader.tsx`
-- Create: `src/components/shell/BrandLink.tsx`
-- Create: `src/components/shell/LocaleSwitch.tsx`
-- Modify: `src/lib/i18n.ts`
-- Modify: `src/app/[locale]/page.tsx`
-- Modify: `src/app/globals.css`
-- Test: `tests/e2e/shell.spec.ts`
+**Files:** create four `src/components/shell/*` components; modify `i18n.ts`, locale page, and `globals.css`; add E2E expectations.
 
-**Interfaces:**
-- `AppShell({ locale, children })` owns page chrome only.
-- `AppHeader({ locale })` composes BrandLink, library/home label, LocaleSwitch, ThemeToggle.
-- `BrandLink({ locale })` renders canonical mark + bilingual wordmark.
-- `LocaleSwitch({ locale })` links to `alternateLocale(locale)` with `hrefLang`.
+**Produces:** `AppShell({ locale, children })`, `AppHeader({ locale })`, `BrandLink({ locale })`, `LocaleSwitch({ locale })`.
 
-- [ ] **Step 1: Add E2E expectations for the future shell before changing the page**
+- [ ] **Step 1: Add RED shell E2E assertions**
 
-Extend `tests/e2e/shell.spec.ts` with stable accessible assertions, for example:
+After navigating to each locale, assert a visible semantic banner, brand link, locale switch, and accessible theme button. Commit and verify current foundation markup fails the new banner/theme contract.
 
-```ts
-await expect(page.getByRole('banner')).toBeVisible();
-await expect(page.getByRole('link', { name: /إيعاز|IYAAZ/ })).toBeVisible();
-await expect(page.getByRole('link', { name: /English|العربية/ })).toBeVisible();
-await expect(page.getByRole('button', { name: /المظهر|theme/i })).toBeVisible();
-```
+- [ ] **Step 2: Add locale labels to `shellCopy`**
 
-Push RED because the current page does not expose the reusable banner/theme-control contract.
+Add labels for theme toggle, shell navigation, skip-to-content, and any concise home/library label. No component hard-codes bilingual UI copy.
 
-- [ ] **Step 2: Add shell copy to `src/lib/i18n.ts`**
+- [ ] **Step 3: Build `BrandLink` and `LocaleSwitch`**
 
-Add locale-specific labels for theme toggle, home/library navigation, and any concise shell accessibility label. Keep all copy in `shellCopy`, not hard-coded inside components.
+Both accept `Locale`; `BrandLink` composes canonical mark/wordmark; `LocaleSwitch` uses `alternateLocale(locale)` and `hrefLang`.
 
-- [ ] **Step 3: Implement `BrandLink` and `LocaleSwitch`**
+- [ ] **Step 4: Build `AppHeader`**
 
-`BrandLink` uses `IyaazMark` and `IyaazWordmark`; `LocaleSwitch` uses `alternateLocale` and `hrefLang`. Components accept `Locale`, not raw strings.
+Use semantic `<header>` and `<nav>`. Compose BrandLink, compact navigation label, LocaleSwitch, ThemeToggle. Do not add a hamburger menu in Phase 4 because the current action count does not require one.
 
-- [ ] **Step 4: Implement `AppHeader`**
-
-Use semantic `<header>`/`<nav>`. Keep controls compact. No hamburger is required for the Phase 4 action count; YAGNI. If later phases exceed available space, Phase 5 can add a navigation drawer.
-
-- [ ] **Step 5: Implement `AppShell`**
-
-Expose one content slot and a skip target:
+- [ ] **Step 5: Build `AppShell`**
 
 ```tsx
 export function AppShell({ locale, children }: { locale: Locale; children: ReactNode }) {
@@ -646,15 +445,15 @@ export function AppShell({ locale, children }: { locale: Locale; children: React
 }
 ```
 
-- [ ] **Step 6: Migrate the locale home page**
+- [ ] **Step 6: Migrate locale home**
 
-Remove the inline `foundation-nav` markup. Keep the Phase 4 page limited to an editorial identity/foundation presentation; do not add the library explorer/search UI yet.
+Remove inline `foundation-nav` structure. Keep home content intentionally limited to an editorial identity/foundation presentation. Do not add Phase 5 library search/results UI.
 
 - [ ] **Step 7: Replace foundation CSS with shell primitives**
 
-Use logical properties (`margin-inline`, `padding-inline`, `inset-inline`, etc.). Remove decorative page-level radial purple gradient. Use selective glass only on the header/one intentional identity surface, not every block.
+Use logical properties only. Remove the decorative page-level radial purple gradient. Use glass/fog selectively on header/identity moments rather than every block.
 
-- [ ] **Step 8: Run focused Playwright and repository gates**
+- [ ] **Step 8: Verify, commit, CI, update PR, report 4D, STOP**
 
 ```bash
 npm run build
@@ -664,43 +463,29 @@ npm run lint
 npm run typecheck
 ```
 
-- [ ] **Step 9: Commit, CI, report, STOP**
-
-Commit message: `feat: add reusable IYAAZ application shell`. Record exact SHA, update PR, STOP before 4E.
+Commit message: `feat: add reusable IYAAZ application shell`.
 
 ---
 
-## Task 7: 4E — Browser Verification Matrix, Accessibility, and Responsive Hardening
+## Task 7: 4E — Responsive, Accessibility, Theme, and RTL Browser Matrix
 
-**Files:**
-- Modify: `tests/e2e/shell.spec.ts`
-- Modify if defects are discovered: the smallest responsible shell/theme/CSS file only.
+**Files:** primarily `tests/e2e/shell.spec.ts`; modify only the smallest responsible implementation file if a defect appears.
 
-**Interfaces:**
-- Produces final browser-level evidence for Phase 4.
+- [ ] **Step 1: Add saved-theme persistence test**
 
-- [ ] **Step 1: Add saved-theme persistence E2E**
+Emulate light system preference, clear `iyaaz:theme`, load `/ar`, click theme control, assert `html[data-theme="dark"]`, reload, assert it remains dark.
 
-Force a known initial media preference, clear saved theme, load `/ar`, click the theme button, assert `html[data-theme]` changes, reload, and assert it remains changed.
+- [ ] **Step 2: Add system fallback test**
 
-- [ ] **Step 2: Add system-theme fallback E2E**
-
-Use `page.emulateMedia({ colorScheme: 'dark' })` with no stored preference and assert the first resolved document theme is `dark`. Repeat with light if needed to prove both branches.
+With no saved preference and `page.emulateMedia({ colorScheme: 'dark' })`, assert the resolved document theme is dark before interaction.
 
 - [ ] **Step 3: Add keyboard reachability**
 
-Use `Tab` navigation to prove brand/navigation/theme/language controls can receive keyboard focus and that focus is not trapped.
+Use `Tab` to prove header links/buttons receive focus in logical order and no control is trapped/unreachable.
 
-- [ ] **Step 4: Add the complete overflow matrix**
+- [ ] **Step 4: Add exact overflow matrix**
 
-Required widths:
-
-```ts
-const widths = [320, 360, 375, 390, 430, 768, 1024, 1280, 1440, 1920];
-const locales = ['ar', 'en'] as const;
-```
-
-For each pair, set viewport, navigate, and assert:
+Use widths `[320, 360, 375, 390, 430, 768, 1024, 1280, 1440, 1920]` and locales `['ar', 'en']`. For every pair, assert:
 
 ```ts
 const overflow = await page.evaluate(() =>
@@ -709,17 +494,17 @@ const overflow = await page.evaluate(() =>
 expect(overflow).toBe(false);
 ```
 
-Run the explicit matrix once under the desktop Chromium project to avoid duplicating all 20 cases across both Playwright projects; retain the existing mobile project for ordinary user-flow regression coverage.
+Execute the explicit 20-case matrix once under the desktop Chromium project; keep ordinary user-flow tests under both desktop and mobile projects.
 
-- [ ] **Step 5: Verify selective icon mirroring**
+- [ ] **Step 5: Verify selective icon mirroring in browser CSS**
 
-Combine the pure `isDirectionalIcon` unit test with a browser computed-style assertion proving `.is-directional` flips only under RTL while an ordinary `.iyaaz-icon` does not receive that transform.
+Under RTL, assert an element with `iyaaz-icon is-directional` has horizontal flip transform while a plain `iyaaz-icon` does not. Unit tests separately prove only `arrow` and `chevron` receive the semantic class.
 
-- [ ] **Step 6: Verify reduced-motion compatibility structurally/browser-side**
+- [ ] **Step 6: Verify reduced-motion usability**
 
-Emulate reduced motion and confirm no critical control depends on animation to become usable or visible.
+Emulate reduced motion and assert theme/language/header controls remain visible and operable without animation.
 
-- [ ] **Step 7: Run the complete local/CI-equivalent verification set**
+- [ ] **Step 7: Run complete verification**
 
 ```bash
 npm test
@@ -729,53 +514,36 @@ npm run build
 npm run test:e2e
 ```
 
-Expected: zero failures.
+If a failure appears: inspect first meaningful failure, reproduce focused, make root-cause fix, rerun focused check, then rerun the complete set. Do not weaken tests/audits.
 
-- [ ] **Step 8: Fix any discovered defect using root-cause discipline**
-
-If a browser or RTL failure appears, read the first meaningful failure, reproduce it in the focused test, make the smallest responsible change, rerun the focused test, then rerun the full verification set. Do not weaken the matrix or audit to obtain green status.
+- [ ] **Step 8: Commit final 4E fixes, then proceed to final evidence task**
 
 ---
 
-## Task 8: Final Phase 4 Candidate, Preview Attempt, and PR Evidence
+## Task 8: Final Phase 4 Candidate and Evidence Packet
 
-**Files:**
-- Modify: PR #1 body only after code/test verification.
-- No merge; no Production deployment.
+**Files:** PR #1 body only after verification; no merge and no Production deployment.
 
-**Interfaces:**
-- Produces: exact Phase 4 candidate SHA and evidence packet.
+- [ ] **Step 1: Record exact final branch head SHA**
 
-- [ ] **Step 1: Record the exact branch head SHA after the final 4E fix/commit**
+All final evidence must reference this candidate.
 
-All subsequent evidence must reference this SHA.
+- [ ] **Step 2: Verify canonical Push and PR CI**
 
-- [ ] **Step 2: Verify canonical Push/PR CI for the same SHA**
+Require `quality` and `browser` jobs PASS on the exact candidate. Inspect job steps and fetch final Playwright report artifact ID/digest.
 
-Require both `quality` and `browser` jobs PASS. Inspect job steps, not only workflow conclusion. Fetch the final Playwright report artifact and record its artifact ID/digest.
+- [ ] **Step 3: Re-check Vercel linkage**
 
-- [ ] **Step 3: Re-check Vercel project linkage**
+List connected Vercel projects and look specifically for one linked to `Mstrq4/iyaaz`. If present, use Preview only and verify the exact candidate. If absent, record `Preview: NOT VERIFIED`; never deploy into an unrelated project.
 
-List connected Vercel projects and look specifically for a project linked to `Mstrq4/iyaaz`. If it exists, create/inspect a Preview only (not Production) and verify it against the exact candidate. If it still does not exist, record Preview as `NOT VERIFIED`; do not deploy into an unrelated project.
+- [ ] **Step 4: Update PR #1**
 
-- [ ] **Step 4: Update PR #1 truthfully**
+Record final candidate, subphase evidence, canonical identity/icon changes, theme/shell behavior, required viewport matrix, all quality gates, Playwright artifact, font-license limitation, preview status, and explicit no-merge/no-Production statement.
 
-Append Phase 4 evidence including:
+- [ ] **Step 5: Report 4E and Phase 4 status, then STOP**
 
-- final candidate SHA;
-- 4A/4B/4C/4D/4E commit/candidate evidence;
-- canonical identity/icon changes;
-- theme and shell behavior;
-- required viewport matrix result;
-- logic/Python/data/RTL/lint/typecheck/build/Playwright results;
-- font delivery limitation if no legal Thmanyah web delivery path exists;
-- Preview PASS or NOT VERIFIED;
-- explicit statement: no merge and no Production deployment.
-
-- [ ] **Step 5: Final Phase 4 report and STOP**
-
-Report only evidence actually observed. State the next product phase (Phase 5: library/detail surfaces + Dynamic Prompt Builder) and wait for user confirmation before beginning it.
+State next phase as Phase 5 (library/detail surfaces + Dynamic Prompt Builder) and wait for user confirmation.
 
 ## Rollback Strategy
 
-Phase 4 is additive/reversible on `feat/iyaaz-platform`. If a subphase proves unacceptable, revert only that subphase's commit(s) while preserving all Phase 3 data/search/API work. Do not rewrite shared branch history and do not force-push.
+Phase 4 remains additive/reversible on `feat/iyaaz-platform`. Revert only the unacceptable subphase commit(s), preserve all Phase 3 work, never force-push shared history, and never merge or deploy Production without explicit approval.
