@@ -3,7 +3,16 @@ import Image from 'next/image';
 type Variant = 'gradient' | 'dark' | 'light';
 
 export function IyaazMark({ variant = 'gradient', className = '' }: { variant?: Variant; className?: string }) {
-  return <Image className={className} src={`/brand/mark-${variant}.svg`} alt="IYAAZ — إيعاز" width={118} height={163} priority />;
+  return (
+    <Image
+      className={className}
+      src={`/brand/mark-${variant}.svg`}
+      alt="IYAAZ — إيعاز"
+      width={160}
+      height={160}
+      priority
+    />
+  );
 }
 
 export function IyaazWordmark({ compact = false }: { compact?: boolean }) {
