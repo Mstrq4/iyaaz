@@ -38,9 +38,8 @@ export function localizeLibraryRecord(
   if (locale === 'ar') return canonicalFallback(record, 'ar');
   if (!hasCompleteEnglishTranslation(record, overlay)) return canonicalFallback(record, 'en');
 
-  const { nameAr: _canonicalName, ...structural } = record;
   const localized: LocalizedLibraryRecord = {
-    ...structural,
+    ...canonicalFallback(record, 'en'),
     name: String(overlay.nameAr),
     locale: 'en',
     translationStatus: 'translated',
