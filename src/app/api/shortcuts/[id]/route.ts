@@ -4,10 +4,16 @@ interface DetailContext {
   params: Promise<{ id: string }>;
 }
 
+const POSITIVE_INTEGER_ID = /^[1-9]\d*$/;
+
 export async function GET(_request: Request, context: DetailContext): Promise<Response> {
   const { id: rawId } = await context.params;
-  const id = Number.parseInt(rawId, 10);
-  if (!Number.isInteger(id) || id < 1) {
+  if (!POSITIVE_INTEGER_ID.test(rawId)) {
+    return Response.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const id = Number(rawId);
+  if (!Number.isSafeInteger(id)) {
     return Response.json({ error: 'not_found' }, { status: 404 });
   }
 
