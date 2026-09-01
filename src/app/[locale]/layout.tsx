@@ -2,6 +2,7 @@ import '../globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
+import { AppShell } from '@/components/shell/AppShell';
 import { ThemeBootstrap } from '@/components/theme/ThemeBootstrap';
 import { directionForLocale, isLocale, SUPPORTED_LOCALES } from '@/lib/i18n';
 
@@ -31,7 +32,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
     <html lang={locale} dir={directionForLocale(locale)} suppressHydrationWarning>
       <body>
         <ThemeBootstrap />
-        {children}
+        <AppShell locale={locale}>{children}</AppShell>
       </body>
     </html>
   );

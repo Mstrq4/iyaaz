@@ -51,6 +51,18 @@ Theme state is represented only by `document.documentElement.dataset.theme` with
 - The control renders both sun and moon vector icons in a stable footprint; semantic theme CSS exposes the action appropriate to the active theme without requiring hydration-dependent icon replacement.
 - Browser-level saved-theme persistence and system-fallback assertions are finalized in Phase 4E; the Phase 4C logic contract is covered independently by executable unit tests.
 
+## AppShell runtime contract
+
+The localized application shell is owned by `src/components/shell/AppShell.tsx` and mounted once by the locale layout.
+
+- The canonical Phase 4A mark and bilingual wordmark are the home identity inside the global header.
+- The shell exposes semantic `banner`, named primary `navigation`, `main`, and `contentinfo` landmarks, plus a keyboard-visible skip link targeting `#main-content`.
+- `LanguageSwitcher` swaps the leading locale segment while retaining any localized path suffix, so later library/detail routes can reuse the same shell without resetting users to the home page.
+- `ThemeToggle` is a global shell utility and uses the Phase 4C persistence contract.
+- All shell controls meet the shared `44px` interaction target and use tokenized focus, surface, border, motion, and spacing roles.
+- Mobile layout may wrap navigation onto a second row, but must not introduce horizontal page overflow.
+- Phase 4D does not add library/search/detail product interfaces; those remain Phase 5 responsibilities.
+
 ## Accessibility contract
 
 - Normal primary and secondary text must remain at least WCAG AA `4.5:1` against the canvas in both themes.
@@ -101,4 +113,4 @@ The target width matrix remains `320 / 360 / 375 / 390 / 430 / 768 / 1024 / 1280
 
 ## Phase boundary
 
-Phase 4C defines pre-hydration theme resolution and persistent toggling. The reusable bilingual application shell is Phase 4D, while the full responsive/accessibility/theme/RTL browser matrix is Phase 4E. Phase 5 remains responsible for the actual library/search/detail/prompt-builder product interfaces.
+Phase 4D owns the reusable bilingual AppShell and global identity/language/theme utilities. The full responsive/accessibility/theme/RTL browser matrix is Phase 4E. Phase 5 remains responsible for the actual library/search/detail/prompt-builder product interfaces.
