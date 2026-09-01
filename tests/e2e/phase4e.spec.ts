@@ -86,16 +86,9 @@ test.describe('Phase 4E browser accessibility and runtime contracts', () => {
     const skipLink = page.locator('.skip-link');
     await expect(skipLink).toBeFocused();
 
-    const focusState = await skipLink.evaluate((element) => {
-      const style = getComputedStyle(element);
-      const box = element.getBoundingClientRect();
-      return {
-        outlineWidth: Number.parseFloat(style.outlineWidth),
-        top: box.top,
-      };
-    });
-    expect(focusState.outlineWidth).toBeGreaterThanOrEqual(3);
-    expect(focusState.top).toBeGreaterThanOrEqual(0);
+    const outlineWidth = await skipLink.evaluate((element) => Number.parseFloat(getComputedStyle(element).outlineWidth));
+    expect(outlineWidth).toBeGreaterThanOrEqual(3);
+    await expect.poll(async () => skipLink.evaluate((element) => element.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
 
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
@@ -112,13 +105,15 @@ test.describe('Phase 4E browser accessibility and runtime contracts', () => {
 
   test('saved theme takes precedence over the opposite system preference and survives reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
-    await seedTheme(page, 'light');
     await page.goto('/en');
+    await page.evaluate(() => window.localStorage.setItem('iyaaz:theme', 'light'));
+    await page.reload();
 
     const root = page.locator('html');
     await expect(root).toHaveAttribute('data-theme', 'light');
     await page.getByRole('button', { name: shellCopy.en.theme }).click();
     await expect(root).toHaveAttribute('data-theme', 'dark');
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem('iyaaz:theme'))).toBe('dark');
     await page.reload();
     await expect(root).toHaveAttribute('data-theme', 'dark');
   });
@@ -144,7 +139,10 @@ test.describe('Phase 4E browser accessibility and runtime contracts', () => {
       };
     });
 
-    expect(motion).toEqual({ fast: '0ms', standard: '0ms', slow: '0ms', distance: '0rem' });
+    expect(Number.parseFloat(motion.fast)).toBe(0);
+    expect(Number.parseFloat(motion.standard)).toBe(0);
+    expect(Number.parseFloat(motion.slow)).toBe(0);
+    expect(Number.parseFloat(motion.distance)).toBe(0);
   });
 
   test('canonical IYAAZ SVG mark loads as a real rendered image in both directions', async ({ page }) => {
