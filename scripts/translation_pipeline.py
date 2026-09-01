@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
 import tempfile
-from collections.abc import Mapping, Sequence
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -14,6 +19,7 @@ SCHEMA_VERSION = 1
 OVERLAY_NAME = "library.en.snapshot.json"
 MANIFEST_NAME = "library.en.manifest.json"
 CACHE_NAME = "translation-cache.json"
+DEFAULT_AZURE_ENDPOINT = "https://api.cognitive.microsofttranslator.com"
 
 TRANSLATABLE_FIELDS: tuple[str, ...] = (
     "nameAr",
@@ -35,6 +41,9 @@ TRANSLATABLE_FIELDS: tuple[str, ...] = (
     "assetType",
     "notes",
 )
+
+Transport = Callable[[str, dict[str, str], bytes], tuple[int, bytes]]
+SleepFn = Callable[[float], None]
 
 
 class TranslationProvider(Protocol):
@@ -175,6 +184,8 @@ def write_translation_artifacts(
         manifest, ensure_ascii=False, sort_keys=True, indent=2
     ).encode("utf-8") + b"\n"
 
+    # The manifest is the commit marker and is replaced last. Readers should only
+    # trust overlay/cache pairs whose hashes match the manifest.
     output_dir.mkdir(parents=True, exist_ok=True)
     _atomic_write(output_dir / OVERLAY_NAME, overlay_raw)
     _atomic_write(output_dir / CACHE_NAME, cache_raw)
@@ -182,14 +193,193 @@ def write_translation_artifacts(
     return manifest
 
 
+def _urllib_transport(url: str, headers: dict[str, str], body: bytes) -> tuple[int, bytes]:
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 - configured HTTPS endpoint
+            return int(response.status), response.read()
+    except urllib.error.HTTPError as exc:
+        return int(exc.code), exc.read()
+
+
+class AzureTranslatorProvider:
+    name = "azure"
+
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        region: str = "",
+        endpoint: str = DEFAULT_AZURE_ENDPOINT,
+        batch_size: int = 100,
+        max_retries: int = 2,
+        transport: Transport | None = None,
+        sleep_fn: SleepFn = time.sleep,
+    ) -> None:
+        key = api_key.strip()
+        if not key:
+            raise ValueError("IYAAZ_TRANSLATION_API_KEY is required for Azure Translator")
+        if batch_size < 1:
+            raise ValueError("translation batch_size must be positive")
+        if max_retries < 0:
+            raise ValueError("translation max_retries cannot be negative")
+        self._api_key = key
+        self._region = region.strip()
+        self._endpoint = endpoint.strip().rstrip("/") or DEFAULT_AZURE_ENDPOINT
+        self._batch_size = batch_size
+        self._max_retries = max_retries
+        self._transport = transport or _urllib_transport
+        self._sleep_fn = sleep_fn
+
+    def _url(self) -> str:
+        base = self._endpoint
+        if not base.endswith("/translate"):
+            base += "/translate"
+        query = urllib.parse.urlencode(
+            {"api-version": "3.0", "from": "ar", "to": "en"}
+        )
+        return f"{base}?{query}"
+
+    def _headers(self) -> dict[str, str]:
+        headers = {
+            "Content-Type": "application/json",
+            "Ocp-Apim-Subscription-Key": self._api_key,
+        }
+        if self._region:
+            headers["Ocp-Apim-Subscription-Region"] = self._region
+        return headers
+
+    def _translate_one_batch(self, texts: list[str]) -> list[str]:
+        body = json.dumps(
+            [{"Text": text} for text in texts],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+        last_status = 0
+        raw = b""
+        for attempt in range(self._max_retries + 1):
+            try:
+                status, raw = self._transport(self._url(), self._headers(), body)
+            except OSError as exc:
+                if attempt >= self._max_retries:
+                    raise RuntimeError("Azure Translator request failed") from exc
+                self._sleep_fn(0.5 * (2**attempt))
+                continue
+
+            last_status = status
+            if status == 200:
+                break
+            if (status == 429 or status >= 500) and attempt < self._max_retries:
+                self._sleep_fn(0.5 * (2**attempt))
+                continue
+            raise RuntimeError(f"Azure Translator returned HTTP {status}")
+        else:  # pragma: no cover - loop exits through return/raise/break
+            raise RuntimeError(f"Azure Translator failed with HTTP {last_status}")
+
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("malformed Azure translation response") from exc
+        if not isinstance(payload, list) or len(payload) != len(texts):
+            raise ValueError("malformed Azure translation response")
+
+        translations: list[str] = []
+        for item in payload:
+            if not isinstance(item, Mapping):
+                raise ValueError("malformed Azure translation response")
+            candidates = item.get("translations")
+            if not isinstance(candidates, list) or not candidates:
+                raise ValueError("malformed Azure translation response")
+            candidate = candidates[0]
+            if not isinstance(candidate, Mapping) or not isinstance(candidate.get("text"), str):
+                raise ValueError("malformed Azure translation response")
+            translations.append(str(candidate["text"]))
+        return translations
+
+    def translate_batch(self, texts: list[str]) -> list[str]:
+        if not texts:
+            return []
+        result: list[str] = []
+        for start in range(0, len(texts), self._batch_size):
+            result.extend(self._translate_one_batch(texts[start : start + self._batch_size]))
+        return result
+
+
+def provider_from_environment(
+    environment: Mapping[str, str] | None = None,
+) -> TranslationProvider:
+    env = environment if environment is not None else os.environ
+    provider_name = env.get("IYAAZ_TRANSLATION_PROVIDER", "azure").strip().lower()
+    if provider_name != "azure":
+        raise ValueError(f"unsupported IYAAZ_TRANSLATION_PROVIDER: {provider_name or '<empty>'}")
+    api_key = env.get("IYAAZ_TRANSLATION_API_KEY", "").strip()
+    if not api_key:
+        raise ValueError("IYAAZ_TRANSLATION_API_KEY is required for translation generation")
+    return AzureTranslatorProvider(
+        api_key=api_key,
+        region=env.get("IYAAZ_TRANSLATION_REGION", ""),
+        endpoint=env.get("IYAAZ_TRANSLATION_ENDPOINT", DEFAULT_AZURE_ENDPOINT),
+    )
+
+
+def _load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def run_translation(
+    source: Path,
+    output_dir: Path,
+    *,
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    raw = source.read_bytes()
+    parsed = json.loads(raw.decode("utf-8"))
+    if not isinstance(parsed, list):
+        raise ValueError("translation source snapshot must be a JSON array")
+    cache_path = output_dir / CACHE_NAME
+    existing_cache = _load_json(cache_path) if cache_path.exists() else {}
+    if not isinstance(existing_cache, Mapping):
+        raise ValueError("translation cache must be a JSON object")
+    provider = provider_from_environment(environment)
+    return write_translation_artifacts(
+        parsed,
+        output_dir,
+        provider,
+        existing_cache=existing_cache,
+        source_snapshot_sha256=hashlib.sha256(raw).hexdigest(),
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Generate the static English IYAAZ translation overlay at build/operator time."
+    )
+    parser.add_argument(
+        "--source", type=Path, default=Path("data/library.snapshot.json")
+    )
+    parser.add_argument("--output-dir", type=Path, default=Path("data"))
+    args = parser.parse_args()
+    manifest = run_translation(args.source, args.output_dir)
+    print(json.dumps(manifest, ensure_ascii=False, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
+
+
 __all__ = [
+    "AzureTranslatorProvider",
     "CACHE_NAME",
+    "DEFAULT_AZURE_ENDPOINT",
     "MANIFEST_NAME",
     "OVERLAY_NAME",
     "SCHEMA_VERSION",
     "TRANSLATABLE_FIELDS",
     "TranslationProvider",
     "build_translation_overlay",
+    "provider_from_environment",
+    "run_translation",
     "source_hash",
     "write_translation_artifacts",
 ]
