@@ -54,6 +54,12 @@ test('language switcher moves between Arabic and English shells', async ({ page 
   await expect(page.getByRole('button', { name: shellCopy.en.theme })).toBeVisible();
 });
 
+test('shell canvas avoids a decorative page-level image or radial gradient', async ({ page }) => {
+  await page.goto('/ar');
+  const backgroundImage = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+  expect(backgroundImage).toBe('none');
+});
+
 test('mobile shell does not overflow horizontally', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/ar');
