@@ -1,6 +1,6 @@
 # IYAAZ Design System — Master
 
-This file is the persistent visual-system source of truth for IYAAZ. Page-specific design files may refine composition, but they must not silently override the locked brand, accessibility, RTL, typography, or semantic-token contracts below.
+This file is the persistent visual-system source of truth for IYAAZ. Page-specific design files may refine composition, but they must not silently override the locked brand, accessibility, RTL, typography, theme, or semantic-token contracts below.
 
 ## Product direction
 
@@ -38,6 +38,18 @@ No `.woff`, `.woff2`, `.ttf`, or `.otf` font binary is committed or shipped by t
 ### Body/UI
 
 Body controls, filters, tables, search results, metadata, and long reading use the system-oriented `--font-body` stack for speed, legibility, and Arabic/English coverage. Body starts at `1rem`; normal prose uses a `1.65` line-height. Data-like identifiers should use `--font-mono` or tabular numerals when introduced by later components.
+
+## Theme runtime contract
+
+Theme state is represented only by `document.documentElement.dataset.theme` with values `light` or `dark`.
+
+- Persistence key: `iyaaz:theme`.
+- Before visible locale content, the static `ThemeBootstrap` script checks the saved value first; only exact `light` or `dark` values are accepted.
+- Without a valid saved value, the bootstrap resolves `prefers-color-scheme: dark` and applies the corresponding authored theme before hydration.
+- If browser storage access throws, bootstrap falls back deterministically to `light` rather than leaving the document in an unknown state.
+- `ThemeToggle` resolves the current document theme, falls back to the current system preference if needed, toggles deterministically, updates `data-theme`, and persists on a best-effort basis.
+- The control renders both sun and moon vector icons in a stable footprint; semantic theme CSS exposes the action appropriate to the active theme without requiring hydration-dependent icon replacement.
+- Browser-level saved-theme persistence and system-fallback assertions are finalized in Phase 4E; the Phase 4C logic contract is covered independently by executable unit tests.
 
 ## Accessibility contract
 
@@ -85,7 +97,8 @@ The target width matrix remains `320 / 360 / 375 / 390 / 430 / 768 / 1024 / 1280
 4. Do not add remote font requests or bundled font binaries without a separate licensing/distribution decision.
 5. Do not use glass on every card; reserve it for meaningful hierarchy.
 6. Respect focus, keyboard, reduced-motion, and RTL behavior from the start rather than patching them after visual implementation.
+7. Resolve theme before visible content and keep the DOM theme source of truth on `html[data-theme]`.
 
 ## Phase boundary
 
-Phase 4B defines typography and semantic tokens only. Full component primitives, shell composition, responsive page integration, and browser-level visual verification are intentionally deferred to the following Phase 4 subphases.
+Phase 4C defines pre-hydration theme resolution and persistent toggling. The reusable bilingual application shell is Phase 4D, while the full responsive/accessibility/theme/RTL browser matrix is Phase 4E. Phase 5 remains responsible for the actual library/search/detail/prompt-builder product interfaces.
