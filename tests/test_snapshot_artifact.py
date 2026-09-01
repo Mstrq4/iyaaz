@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import unittest
 from collections import Counter
 from pathlib import Path
-
-import brotli
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -21,23 +18,9 @@ class SnapshotArtifactTests(unittest.TestCase):
 
     def load_records(self) -> list[dict[str, object]]:
         manifest = self.load_manifest()
-        chunks = manifest.get("chunks")
-        self.assertIsInstance(chunks, list)
-        self.assertEqual(len(chunks), 17)
-
-        encoded_parts: list[str] = []
-        for chunk in chunks:
-            self.assertIsInstance(chunk, dict)
-            path = DATA / str(chunk["file"])
-            self.assertTrue(path.exists(), f"missing snapshot chunk: {path.name}")
-            text = path.read_text(encoding="ascii")
-            self.assertEqual(len(text), chunk["charCount"])
-            self.assertEqual(hashlib.sha256(text.encode("ascii")).hexdigest(), chunk["sha256"])
-            encoded_parts.append(text)
-
-        compressed = base64.b64decode("".join(encoded_parts), validate=True)
-        self.assertEqual(hashlib.sha256(compressed).hexdigest(), manifest["compressedSha256"])
-        raw = brotli.decompress(compressed)
+        snapshot = DATA / str(manifest["file"])
+        self.assertTrue(snapshot.exists(), f"missing JSON snapshot: {snapshot.name}")
+        raw = snapshot.read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(), manifest["sha256"])
         records = json.loads(raw.decode("utf-8"))
         self.assertIsInstance(records, list)
@@ -74,8 +57,8 @@ class SnapshotArtifactTests(unittest.TestCase):
     def test_manifest_describes_the_exact_committed_snapshot(self):
         manifest = self.load_manifest()
         self.assertEqual(manifest["schemaVersion"], 1)
-        self.assertEqual(manifest["format"], "json+brotli+base64-chunks")
-        self.assertEqual(manifest["base64ChunkSize"], 12000)
+        self.assertEqual(manifest["format"], "json")
+        self.assertEqual(manifest["file"], "library.snapshot.json")
         self.assertEqual(manifest["recordCount"], 5812)
         self.assertEqual(manifest["domainCount"], 9)
         self.assertEqual(manifest["categoryCount"], 21)
