@@ -99,6 +99,68 @@ button,
   border: 1px solid var(--color-border-subtle);
 }
 
+.icon-button {
+  inline-size: var(--touch-target);
+  block-size: var(--touch-target);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-primary);
+  background: var(--color-surface-glass);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.icon-button:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-glass-strong);
+}
+
+.theme-toggle__icon {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard),
+    visibility var(--motion-fast) linear;
+}
+
+.theme-toggle__icon .iyaaz-icon {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.theme-toggle__icon--sun {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.88);
+}
+
+.theme-toggle__icon--moon {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+:root[data-theme="dark"] .theme-toggle__icon--sun {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+:root[data-theme="dark"] .theme-toggle__icon--moon {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.88);
+}
+
 .foundation-hero {
   margin-block-start: clamp(var(--space-8), 8vw, 7rem);
   padding: clamp(var(--space-5), 5vw, var(--space-16));
