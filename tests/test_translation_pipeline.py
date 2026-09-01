@@ -7,8 +7,13 @@ import unittest
 from pathlib import Path
 
 from scripts.translation_pipeline import (
+    CACHE_NAME,
+    MANIFEST_NAME,
+    OVERLAY_NAME,
     TRANSLATABLE_FIELDS,
+    AzureTranslatorProvider,
     build_translation_overlay,
+    provider_from_environment,
     source_hash,
     write_translation_artifacts,
 )
@@ -116,9 +121,9 @@ class TranslationPipelineTests(unittest.TestCase):
                 existing_cache={},
                 source_snapshot_sha256="abc123",
             )
-            overlay_path = output_dir / "library.en.snapshot.json"
-            cache_path = output_dir / "translation-cache.json"
-            manifest_path = output_dir / "library.en.manifest.json"
+            overlay_path = output_dir / OVERLAY_NAME
+            cache_path = output_dir / CACHE_NAME
+            manifest_path = output_dir / MANIFEST_NAME
 
             self.assertTrue(overlay_path.exists())
             self.assertTrue(cache_path.exists())
@@ -138,6 +143,98 @@ class TranslationPipelineTests(unittest.TestCase):
             self.assertNotIn("api_key", serialized)
             self.assertNotIn("subscription-key", serialized)
             self.assertNotIn("secret", serialized)
+
+    def test_azure_adapter_sends_secret_only_in_header_and_batches_requests(self):
+        requests: list[tuple[str, dict[str, str], bytes]] = []
+
+        def transport(url: str, headers: dict[str, str], body: bytes) -> tuple[int, bytes]:
+            requests.append((url, dict(headers), body))
+            payload = json.loads(body.decode("utf-8"))
+            response = [
+                {"translations": [{"text": f"EN::{item['Text']}", "to": "en"}]}
+                for item in payload
+            ]
+            return 200, json.dumps(response).encode("utf-8")
+
+        provider = AzureTranslatorProvider(
+            api_key="super-secret-value",
+            region="uaenorth",
+            batch_size=2,
+            transport=transport,
+        )
+        result = provider.translate_batch(["واحد", "اثنان", "ثلاثة"])
+
+        self.assertEqual(result, ["EN::واحد", "EN::اثنان", "EN::ثلاثة"])
+        self.assertEqual(len(requests), 2)
+        for url, headers, body in requests:
+            self.assertIn("api-version=3.0", url)
+            self.assertIn("from=ar", url)
+            self.assertIn("to=en", url)
+            self.assertNotIn("super-secret-value", url)
+            self.assertNotIn(b"super-secret-value", body)
+            self.assertEqual(headers["Ocp-Apim-Subscription-Key"], "super-secret-value")
+            self.assertEqual(headers["Ocp-Apim-Subscription-Region"], "uaenorth")
+            self.assertEqual(headers["Content-Type"], "application/json")
+
+    def test_azure_adapter_retries_429_then_succeeds_with_bounded_attempts(self):
+        statuses = [429, 200]
+        sleeps: list[float] = []
+
+        def transport(url: str, headers: dict[str, str], body: bytes) -> tuple[int, bytes]:
+            status = statuses.pop(0)
+            if status == 429:
+                return status, b'{"error":{"message":"slow down"}}'
+            return 200, b'[{"translations":[{"text":"Hello","to":"en"}]}]'
+
+        provider = AzureTranslatorProvider(
+            api_key="key",
+            max_retries=2,
+            transport=transport,
+            sleep_fn=sleeps.append,
+        )
+        self.assertEqual(provider.translate_batch(["مرحبا"]), ["Hello"])
+        self.assertEqual(len(sleeps), 1)
+
+    def test_azure_adapter_rejects_malformed_success_response(self):
+        provider = AzureTranslatorProvider(
+            api_key="key",
+            transport=lambda url, headers, body: (200, b'{}'),
+        )
+        with self.assertRaisesRegex(ValueError, "malformed"):
+            provider.translate_batch(["مرحبا"])
+
+    def test_provider_from_environment_fails_before_network_without_secret(self):
+        with self.assertRaisesRegex(ValueError, "IYAAZ_TRANSLATION_API_KEY"):
+            provider_from_environment({"IYAAZ_TRANSLATION_PROVIDER": "azure"})
+
+    def test_failed_provider_does_not_replace_existing_artifacts(self):
+        class BrokenProvider:
+            name = "broken"
+
+            def translate_batch(self, texts: list[str]) -> list[str]:
+                raise RuntimeError("provider unavailable")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            existing = {
+                OVERLAY_NAME: b"old-overlay",
+                CACHE_NAME: b"old-cache",
+                MANIFEST_NAME: b"old-manifest",
+            }
+            for name, raw in existing.items():
+                (output_dir / name).write_bytes(raw)
+
+            with self.assertRaisesRegex(RuntimeError, "provider unavailable"):
+                write_translation_artifacts(
+                    [self.sample_record()],
+                    output_dir,
+                    BrokenProvider(),
+                    existing_cache={},
+                    source_snapshot_sha256="abc123",
+                )
+
+            for name, raw in existing.items():
+                self.assertEqual((output_dir / name).read_bytes(), raw)
 
 
 if __name__ == "__main__":
