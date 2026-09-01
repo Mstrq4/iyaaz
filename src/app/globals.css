@@ -14,9 +14,7 @@ body {
   margin: 0;
   min-block-size: 100dvh;
   color: var(--color-text-primary);
-  background:
-    radial-gradient(circle at 20% 10%, var(--color-ambient-glow), transparent 34rem),
-    var(--color-bg-canvas);
+  background: var(--color-bg-canvas);
   font-family: var(--font-body);
   font-size: var(--font-size-body);
   line-height: var(--line-body);
