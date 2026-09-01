@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { libraryCopy, type Locale } from '../../lib/i18n';
+import { libraryCopy, type LibraryCopy, type Locale } from '../../lib/i18n';
 import {
   LIBRARY_PAGE_SIZE,
   clampLibraryPage,
@@ -31,6 +31,49 @@ interface SearchResponse {
   sort: SearchSort;
 }
 
+interface RequestState<T> {
+  key: string;
+  data: T | null;
+  error: boolean;
+}
+
+interface LibrarySearchBoxProps {
+  copy: LibraryCopy;
+  initialQuery: string;
+  onQueryChange: (query: string) => void;
+}
+
+function LibrarySearchBox({ copy, initialQuery, onQueryChange }: LibrarySearchBoxProps) {
+  const [draft, setDraft] = useState(initialQuery);
+
+  useEffect(() => {
+    if (draft.trim() === initialQuery) return;
+    const timer = setTimeout(() => onQueryChange(draft), 300);
+    return () => clearTimeout(timer);
+  }, [draft, initialQuery, onQueryChange]);
+
+  return (
+    <div className="library-search">
+      <label htmlFor="library-search-input">{copy.search}</label>
+      <div className="library-search__field">
+        <input
+          id="library-search-input"
+          type="search"
+          value={draft}
+          placeholder={copy.searchPlaceholder}
+          autoComplete="off"
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        {draft ? (
+          <button type="button" onClick={() => setDraft('')}>
+            {copy.clearSearch}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function LibraryExplorer({ locale }: LibraryExplorerProps) {
   const copy = libraryCopy[locale];
   const pathname = usePathname();
@@ -39,14 +82,22 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
   const searchString = searchParams.toString();
   const state = useMemo(() => parseLibraryQueryState(searchString), [searchString]);
 
-  const [queryInput, setQueryInput] = useState(state.q);
-  const [taxonomy, setTaxonomy] = useState<LibraryTaxonomy | null>(null);
-  const [taxonomyError, setTaxonomyError] = useState(false);
   const [taxonomyRetry, setTaxonomyRetry] = useState(0);
-  const [result, setResult] = useState<SearchResponse | null>(null);
-  const [searchError, setSearchError] = useState(false);
+  const taxonomyRequestKey = String(taxonomyRetry);
+  const [taxonomyState, setTaxonomyState] = useState<RequestState<LibraryTaxonomy>>({
+    key: '',
+    data: null,
+    error: false,
+  });
+
   const [searchRetry, setSearchRetry] = useState(0);
-  const [isPending, setIsPending] = useState(true);
+  const canonicalQuery = serializeLibraryQueryState(state);
+  const searchRequestKey = `${canonicalQuery}|${searchRetry}`;
+  const [searchState, setSearchState] = useState<RequestState<SearchResponse>>({
+    key: '',
+    data: null,
+    error: false,
+  });
 
   const replaceState = useCallback((nextState: ReturnType<typeof parseLibraryQueryState>) => {
     const serialized = serializeLibraryQueryState(nextState);
@@ -58,18 +109,7 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
   }, [replaceState, state]);
 
   useEffect(() => {
-    setQueryInput(state.q);
-  }, [state.q]);
-
-  useEffect(() => {
-    if (queryInput.trim() === state.q) return;
-    const timer = setTimeout(() => applyPatch({ q: queryInput }), 300);
-    return () => clearTimeout(timer);
-  }, [applyPatch, queryInput, state.q]);
-
-  useEffect(() => {
     const controller = new AbortController();
-    setTaxonomyError(false);
 
     const run = async () => {
       try {
@@ -79,21 +119,23 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
         if (!payload || !Array.isArray(payload.domains) || !Array.isArray(payload.shortcutTypes)) {
           throw new Error('invalid taxonomy payload');
         }
-        setTaxonomy(payload);
+        setTaxonomyState({ key: taxonomyRequestKey, data: payload, error: false });
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
-        setTaxonomyError(true);
+        setTaxonomyState((current) => ({
+          key: taxonomyRequestKey,
+          data: current.data,
+          error: true,
+        }));
       }
     };
 
     void run();
     return () => controller.abort();
-  }, [taxonomyRetry]);
+  }, [taxonomyRequestKey]);
 
   useEffect(() => {
     const controller = new AbortController();
-    setSearchError(false);
-    setIsPending(true);
 
     const run = async () => {
       try {
@@ -120,19 +162,22 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
           return;
         }
 
-        setResult(payload);
+        setSearchState({ key: searchRequestKey, data: payload, error: false });
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
-        setSearchError(true);
-      } finally {
-        if (!controller.signal.aborted) setIsPending(false);
+        setSearchState({ key: searchRequestKey, data: null, error: true });
       }
     };
 
     void run();
     return () => controller.abort();
-  }, [replaceState, searchRetry, state]);
+  }, [replaceState, searchRequestKey, state]);
 
+  const taxonomy = taxonomyState.data;
+  const taxonomyError = taxonomyState.key === taxonomyRequestKey && taxonomyState.error;
+  const isPending = searchState.key !== searchRequestKey;
+  const searchError = searchState.key === searchRequestKey && searchState.error;
+  const result = searchState.key === searchRequestKey ? searchState.data : null;
   const formattedTotal = result
     ? new Intl.NumberFormat(locale === 'ar' ? 'ar' : 'en').format(result.total)
     : '—';
@@ -140,24 +185,12 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
   return (
     <div className="library-explorer" aria-busy={isPending}>
       <aside className="library-controls" aria-label={copy.filters}>
-        <div className="library-search">
-          <label htmlFor="library-search-input">{copy.search}</label>
-          <div className="library-search__field">
-            <input
-              id="library-search-input"
-              type="search"
-              value={queryInput}
-              placeholder={copy.searchPlaceholder}
-              autoComplete="off"
-              onChange={(event) => setQueryInput(event.target.value)}
-            />
-            {queryInput ? (
-              <button type="button" onClick={() => setQueryInput('')}>
-                {copy.clearSearch}
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <LibrarySearchBox
+          key={state.q}
+          copy={copy}
+          initialQuery={state.q}
+          onQueryChange={(query) => applyPatch({ q: query })}
+        />
 
         <LibraryFilters copy={copy} state={state} taxonomy={taxonomy} onPatch={applyPatch} />
 
@@ -179,7 +212,7 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
             <span id="library-results-heading">{copy.results}</span>
             <strong>{formattedTotal} {copy.records}</strong>
           </div>
-          {isPending && result ? <span className="library-updating" role="status">{copy.updating}</span> : null}
+          {isPending ? <span className="library-updating" role="status">{copy.updating}</span> : null}
         </header>
 
         {searchError ? (
@@ -189,14 +222,14 @@ export function LibraryExplorer({ locale }: LibraryExplorerProps) {
           </div>
         ) : null}
 
-        {!result && !searchError ? (
+        {isPending && !searchError ? (
           <div className="library-status" role="status">{copy.loading}</div>
         ) : null}
 
         {result && !searchError && result.items.length === 0 ? (
           <div className="library-status">
             <p>{copy.noResults}</p>
-            {state.q ? <button type="button" onClick={() => setQueryInput('')}>{copy.clearSearch}</button> : null}
+            {state.q ? <button type="button" onClick={() => applyPatch({ q: '' })}>{copy.clearSearch}</button> : null}
           </div>
         ) : null}
 
