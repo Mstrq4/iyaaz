@@ -1,0 +1,39 @@
+{
+  "categoryCount": 21,
+  "domainCount": 9,
+  "file": "library.snapshot.json",
+  "format": "json",
+  "publicFields": [
+    "id",
+    "shortcut",
+    "nameAr",
+    "mainDomain",
+    "category",
+    "subcategory",
+    "shortcutType",
+    "functionText",
+    "requiredInputs",
+    "executionInstructions",
+    "outputs",
+    "sizeRatio",
+    "materialsTech",
+    "lighting",
+    "installationExecution",
+    "visualStyle",
+    "brandCompliance",
+    "combinedShortcuts",
+    "bestUse",
+    "keywords",
+    "assetType",
+    "notes"
+  ],
+  "recordCount": 5812,
+  "schemaVersion": 1,
+  "sha256": "66c92b5eb928badaaafba1ce6e188ed09f543417926ef2fa42fff0116abde92e",
+  "subcategoryCount": 364,
+  "typeCounts": {
+    "Master": 118,
+    "متخصص": 5622,
+    "مركب": 72
+  }
+}
