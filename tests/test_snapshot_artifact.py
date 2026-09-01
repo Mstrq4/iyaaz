@@ -1,28 +1,47 @@
 from __future__ import annotations
 
-import gzip
+import base64
 import hashlib
 import json
 import unittest
 from collections import Counter
 from pathlib import Path
 
+import brotli
+
 ROOT = Path(__file__).resolve().parents[1]
-SNAPSHOT = ROOT / "data" / "library.snapshot.json.gz"
-MANIFEST = ROOT / "data" / "library.manifest.json"
+DATA = ROOT / "data"
+MANIFEST = DATA / "library.manifest.json"
 
 
 class SnapshotArtifactTests(unittest.TestCase):
-    def load_records(self) -> list[dict[str, object]]:
-        self.assertTrue(SNAPSHOT.exists(), "data/library.snapshot.json.gz must exist for Phase 3B")
-        with gzip.open(SNAPSHOT, "rt", encoding="utf-8") as handle:
-            records = json.load(handle)
-        self.assertIsInstance(records, list)
-        return records
-
     def load_manifest(self) -> dict[str, object]:
         self.assertTrue(MANIFEST.exists(), "data/library.manifest.json must exist for Phase 3B")
         return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+    def load_records(self) -> list[dict[str, object]]:
+        manifest = self.load_manifest()
+        chunks = manifest.get("chunks")
+        self.assertIsInstance(chunks, list)
+        self.assertEqual(len(chunks), 17)
+
+        encoded_parts: list[str] = []
+        for chunk in chunks:
+            self.assertIsInstance(chunk, dict)
+            path = DATA / str(chunk["file"])
+            self.assertTrue(path.exists(), f"missing snapshot chunk: {path.name}")
+            text = path.read_text(encoding="ascii")
+            self.assertEqual(len(text), chunk["charCount"])
+            self.assertEqual(hashlib.sha256(text.encode("ascii")).hexdigest(), chunk["sha256"])
+            encoded_parts.append(text)
+
+        compressed = base64.b64decode("".join(encoded_parts), validate=True)
+        self.assertEqual(hashlib.sha256(compressed).hexdigest(), manifest["compressedSha256"])
+        raw = brotli.decompress(compressed)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), manifest["sha256"])
+        records = json.loads(raw.decode("utf-8"))
+        self.assertIsInstance(records, list)
+        return records
 
     def test_snapshot_exact_count_uniqueness_and_contiguous_ids(self):
         records = self.load_records()
@@ -54,17 +73,14 @@ class SnapshotArtifactTests(unittest.TestCase):
 
     def test_manifest_describes_the_exact_committed_snapshot(self):
         manifest = self.load_manifest()
-        compressed = SNAPSHOT.read_bytes()
-        with gzip.open(SNAPSHOT, "rb") as handle:
-            raw = handle.read()
-
         self.assertEqual(manifest["schemaVersion"], 1)
+        self.assertEqual(manifest["format"], "json+brotli+base64-chunks")
+        self.assertEqual(manifest["base64ChunkSize"], 12000)
         self.assertEqual(manifest["recordCount"], 5812)
         self.assertEqual(manifest["domainCount"], 9)
         self.assertEqual(manifest["categoryCount"], 21)
         self.assertEqual(manifest["subcategoryCount"], 364)
-        self.assertEqual(manifest["sha256"], hashlib.sha256(raw).hexdigest())
-        self.assertEqual(manifest["compressedSha256"], hashlib.sha256(compressed).hexdigest())
+        self.assertEqual(manifest["typeCounts"], {"Master": 118, "متخصص": 5622, "مركب": 72})
 
 
 if __name__ == "__main__":
