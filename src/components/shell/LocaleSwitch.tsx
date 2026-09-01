@@ -15,7 +15,7 @@ function alternateLocalePath(pathname: string, locale: Locale, targetLocale: Loc
   return `/${targetLocale}`;
 }
 
-export function LanguageSwitcher({ locale, label }: { locale: Locale; label: string }) {
+export function LocaleSwitch({ locale, label }: { locale: Locale; label: string }) {
   const pathname = usePathname();
   const targetLocale = alternateLocale(locale);
   const href = alternateLocalePath(pathname, locale, targetLocale);
