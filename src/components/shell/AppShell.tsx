@@ -10,7 +10,7 @@ export function AppShell({ locale, children }: { locale: Locale; children: React
       <a className="skip-link" href="#main-content">{copy.skipToContent}</a>
       <AppHeader locale={locale} />
 
-      <main id="main-content" className="app-main">
+      <main id="main-content" className="app-main" tabIndex={-1}>
         {children}
       </main>
 
