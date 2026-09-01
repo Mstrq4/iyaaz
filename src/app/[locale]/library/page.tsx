@@ -1,3 +1,5 @@
+import '../../../styles/library.css';
+
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 
