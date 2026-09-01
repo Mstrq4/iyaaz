@@ -1,7 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { LibraryRecord } from './types.ts';
+import { localizeLibraryRecord } from './localization.ts';
+import type {
+  LibraryLocale,
+  LibraryRecord,
+  LocalizedLibraryRecord,
+  TranslationOverlayRecord,
+} from './types.ts';
 
 export interface TaxonomyCountNode {
   name: string;
@@ -28,8 +34,10 @@ export interface LibraryTaxonomy {
 }
 
 const SNAPSHOT_PATH = path.join(process.cwd(), 'data', 'library.snapshot.json');
+const ENGLISH_OVERLAY_PATH = path.join(process.cwd(), 'data', 'library.en.snapshot.json');
 
 let recordsPromise: Promise<readonly LibraryRecord[]> | undefined;
+let englishOverlayPromise: Promise<readonly TranslationOverlayRecord[]> | undefined;
 let taxonomyPromise: Promise<LibraryTaxonomy> | undefined;
 
 function compareArabic(a: string, b: string): number {
@@ -49,14 +57,71 @@ async function readSnapshot(): Promise<readonly LibraryRecord[]> {
   return parsed as LibraryRecord[];
 }
 
+function isTranslationOverlayRecord(value: unknown): value is TranslationOverlayRecord {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  return Number.isInteger(candidate.id) && Number(candidate.id) > 0 && typeof candidate.shortcut === 'string';
+}
+
+async function readEnglishOverlay(): Promise<readonly TranslationOverlayRecord[]> {
+  let raw: string;
+  try {
+    raw = await readFile(ENGLISH_OVERLAY_PATH, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
+  }
+
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed) || !parsed.every(isTranslationOverlayRecord)) {
+    throw new Error('IYAAZ English translation overlay must be an array of valid records');
+  }
+  return parsed;
+}
+
 export function loadLibraryRecords(): Promise<readonly LibraryRecord[]> {
   recordsPromise ??= readSnapshot();
   return recordsPromise;
 }
 
+export function loadEnglishTranslationOverlay(): Promise<readonly TranslationOverlayRecord[]> {
+  englishOverlayPromise ??= readEnglishOverlay();
+  return englishOverlayPromise;
+}
+
 export function findLibraryRecordById(records: readonly LibraryRecord[], id: number): LibraryRecord | undefined {
   if (!Number.isInteger(id) || id < 1) return undefined;
   return records.find((record) => record.id === id);
+}
+
+export function findTranslationOverlayById(
+  records: readonly TranslationOverlayRecord[],
+  id: number,
+): TranslationOverlayRecord | undefined {
+  if (!Number.isInteger(id) || id < 1) return undefined;
+  return records.find((record) => record.id === id);
+}
+
+export async function loadLocalizedLibraryRecords(locale: LibraryLocale): Promise<readonly LocalizedLibraryRecord[]> {
+  const records = await loadLibraryRecords();
+  if (locale === 'ar') return records.map((record) => localizeLibraryRecord(record, undefined, 'ar'));
+
+  const overlay = await loadEnglishTranslationOverlay();
+  const byId = new Map(overlay.map((record) => [record.id, record]));
+  return records.map((record) => localizeLibraryRecord(record, byId.get(record.id), 'en'));
+}
+
+export async function findLocalizedLibraryRecordById(
+  id: number,
+  locale: LibraryLocale,
+): Promise<LocalizedLibraryRecord | undefined> {
+  const records = await loadLibraryRecords();
+  const record = findLibraryRecordById(records, id);
+  if (!record) return undefined;
+  if (locale === 'ar') return localizeLibraryRecord(record, undefined, 'ar');
+
+  const overlay = await loadEnglishTranslationOverlay();
+  return localizeLibraryRecord(record, findTranslationOverlayById(overlay, id), 'en');
 }
 
 function buildTaxonomy(records: readonly LibraryRecord[]): LibraryTaxonomy {
