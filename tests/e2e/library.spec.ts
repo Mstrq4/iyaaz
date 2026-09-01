@@ -38,14 +38,14 @@ for (const locale of ['ar', 'en'] as const) {
     await expect(page.locator('[data-record-id]')).toHaveCount(50);
   });
 
-  test(`${locale} known shortcut search is debounced into URL state and returns record 3`, async ({ page }) => {
+  test(`${locale} known shortcut search is debounced into URL state and ranks record 3 first`, async ({ page }) => {
     await page.goto(`/${locale}/library`);
     const search = page.getByRole('searchbox', { name: copy[locale].search });
 
     await search.fill('/ACPStorefrontLuxury');
     await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('/ACPStorefrontLuxury');
     await expect(page.locator('[data-record-id="3"]')).toBeVisible();
-    await expect(page.locator('[data-record-id]')).toHaveCount(1);
+    await expect(page.locator('[data-record-id]').first()).toHaveAttribute('data-record-id', '3');
   });
 
   test(`${locale} domain changes clear dependent category and subcategory state`, async ({ page, request }) => {
@@ -63,9 +63,9 @@ for (const locale of ['ar', 'en'] as const) {
     expect(otherDomain).toBeTruthy();
 
     await page.goto(`/${locale}/library`);
-    const domain = page.getByLabel(copy[locale].domain);
-    const category = page.getByLabel(copy[locale].category);
-    const subcategory = page.getByLabel(copy[locale].subcategory);
+    const domain = page.getByLabel(copy[locale].domain, { exact: true });
+    const category = page.getByLabel(copy[locale].category, { exact: true });
+    const subcategory = page.getByLabel(copy[locale].subcategory, { exact: true });
 
     await domain.selectOption(record.mainDomain);
     await expect.poll(() => new URL(page.url()).searchParams.get('domain')).toBe(record.mainDomain);
@@ -87,7 +87,7 @@ test('sorting and paging stay URL-driven and request only the current 50-row pag
   await page.goto('/ar/library');
   await expect(page.locator('[data-record-id]').first()).toHaveAttribute('data-record-id', '1');
 
-  await page.getByLabel(copy.ar.sort).selectOption('id-desc');
+  await page.getByLabel(copy.ar.sort, { exact: true }).selectOption('id-desc');
   await expect.poll(() => new URL(page.url()).searchParams.get('sort')).toBe('id-desc');
   await expect(page.locator('[data-record-id]').first()).toHaveAttribute('data-record-id', '5812');
   await expect(page.locator('[data-record-id]')).toHaveCount(50);

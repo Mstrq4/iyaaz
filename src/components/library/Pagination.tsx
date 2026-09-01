@@ -28,16 +28,16 @@ export function Pagination({ locale, copy, pathname, state, total }: PaginationP
   };
 
   return (
-    <nav className="library-pagination" aria-label={copy.pagination}>
+    <nav className="library-pagination" aria-label={copy.pagination} data-locale={locale}>
       <div className="library-pagination__controls">
         {currentPage > 1 ? (
           <Link className="library-pagination__link" href={hrefFor(currentPage - 1)} scroll={false}>
-            <IyaazIcon name="chevron" direction={locale === 'ar' ? 'rtl' : 'ltr'} />
+            <IyaazIcon name="chevron" className="library-pagination__icon--previous" />
             <span>{copy.previous}</span>
           </Link>
         ) : (
           <span className="library-pagination__link" aria-disabled="true">
-            <IyaazIcon name="chevron" direction={locale === 'ar' ? 'rtl' : 'ltr'} />
+            <IyaazIcon name="chevron" className="library-pagination__icon--previous" />
             <span>{copy.previous}</span>
           </span>
         )}
@@ -49,12 +49,12 @@ export function Pagination({ locale, copy, pathname, state, total }: PaginationP
         {currentPage < totalPages ? (
           <Link className="library-pagination__link" href={hrefFor(currentPage + 1)} scroll={false}>
             <span>{copy.next}</span>
-            <IyaazIcon name="chevron" direction={locale === 'ar' ? 'rtl' : 'ltr'} />
+            <IyaazIcon name="chevron" className="library-pagination__icon--next" />
           </Link>
         ) : (
           <span className="library-pagination__link" aria-disabled="true">
             <span>{copy.next}</span>
-            <IyaazIcon name="chevron" direction={locale === 'ar' ? 'rtl' : 'ltr'} />
+            <IyaazIcon name="chevron" className="library-pagination__icon--next" />
           </span>
         )}
       </div>
