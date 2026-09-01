@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unittest
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -8,9 +9,11 @@ MODULE_PATH = ROOT / "scripts" / "build_snapshot.py"
 
 
 def load_module():
-    assert MODULE_PATH.exists(), "scripts/build_snapshot.py must exist for Phase 3A"
+    if not MODULE_PATH.exists():
+        raise AssertionError("scripts/build_snapshot.py must exist for Phase 3A")
     spec = spec_from_file_location("build_snapshot", MODULE_PATH)
-    assert spec and spec.loader
+    if not spec or not spec.loader:
+        raise AssertionError("Unable to load scripts/build_snapshot.py")
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -44,69 +47,68 @@ def sample_row() -> dict[str, object]:
     }
 
 
-def test_sanitize_row_uses_allowlist_and_removes_source_fields_and_urls():
-    module = load_module()
-    record = module.sanitize_row(sample_row())
+class DataSanitizerContractTests(unittest.TestCase):
+    def test_sanitize_row_uses_allowlist_and_removes_source_fields_and_urls(self):
+        module = load_module()
+        record = module.sanitize_row(sample_row())
 
-    assert record["id"] == 42
-    assert record["shortcut"] == "/StorefrontHero"
-    assert record["nameAr"] == "واجهة متجر — هيرو"
-    assert record["mainDomain"] == "الواجهات التجارية"
-    assert record["category"] == "واجهات المتاجر"
-    assert record["subcategory"] == "واجهات حديثة"
-    assert record["shortcutType"] == "متخصص"
+        self.assertEqual(record["id"], 42)
+        self.assertEqual(record["shortcut"], "/StorefrontHero")
+        self.assertEqual(record["nameAr"], "واجهة متجر — هيرو")
+        self.assertEqual(record["mainDomain"], "الواجهات التجارية")
+        self.assertEqual(record["category"], "واجهات المتاجر")
+        self.assertEqual(record["subcategory"], "واجهات حديثة")
+        self.assertEqual(record["shortcutType"], "متخصص")
 
-    serialized = module.serialize_record(record)
-    assert "المصدر المرجعي" not in serialized
-    assert "source" not in serialized.lower()
-    assert "http://" not in serialized.lower()
-    assert "https://" not in serialized.lower()
-    assert "www." not in serialized.lower()
+        serialized = module.serialize_record(record)
+        self.assertNotIn("المصدر المرجعي", serialized)
+        self.assertNotIn("source", serialized.lower())
+        self.assertNotIn("http://", serialized.lower())
+        self.assertNotIn("https://", serialized.lower())
+        self.assertNotIn("www.", serialized.lower())
+
+    def test_sanitize_row_preserves_operational_columns_needed_by_prompt_builder(self):
+        module = load_module()
+        record = module.sanitize_row(sample_row())
+
+        expected_keys = {
+            "id",
+            "shortcut",
+            "nameAr",
+            "mainDomain",
+            "category",
+            "subcategory",
+            "shortcutType",
+            "functionText",
+            "requiredInputs",
+            "executionInstructions",
+            "outputs",
+            "sizeRatio",
+            "materialsTech",
+            "lighting",
+            "installationExecution",
+            "visualStyle",
+            "brandCompliance",
+            "combinedShortcuts",
+            "bestUse",
+            "keywords",
+            "assetType",
+            "notes",
+        }
+
+        self.assertEqual(set(record), expected_keys)
+        self.assertEqual(record["requiredInputs"], "اسم المتجر، النشاط، المقاس")
+        self.assertEqual(record["executionInstructions"], "استخدم هوية العميل والتزم بالمقاس.")
+        self.assertEqual(record["notes"], "راجع ثم أكمل.")
+
+    def test_sanitize_row_requires_identity_fields(self):
+        module = load_module()
+        row = sample_row()
+        row["الاختصار"] = ""
+
+        with self.assertRaisesRegex(ValueError, "shortcut"):
+            module.sanitize_row(row)
 
 
-def test_sanitize_row_preserves_operational_columns_needed_by_the_prompt_builder():
-    module = load_module()
-    record = module.sanitize_row(sample_row())
-
-    expected_keys = {
-        "id",
-        "shortcut",
-        "nameAr",
-        "mainDomain",
-        "category",
-        "subcategory",
-        "shortcutType",
-        "functionText",
-        "requiredInputs",
-        "executionInstructions",
-        "outputs",
-        "sizeRatio",
-        "materialsTech",
-        "lighting",
-        "installationExecution",
-        "visualStyle",
-        "brandCompliance",
-        "combinedShortcuts",
-        "bestUse",
-        "keywords",
-        "assetType",
-        "notes",
-    }
-
-    assert set(record) == expected_keys
-    assert record["requiredInputs"] == "اسم المتجر، النشاط، المقاس"
-    assert record["executionInstructions"] == "استخدم هوية العميل والتزم بالمقاس."
-    assert record["notes"] == "راجع ثم أكمل."
-
-
-def test_sanitize_row_requires_identity_fields():
-    module = load_module()
-    row = sample_row()
-    row["الاختصار"] = ""
-
-    try:
-        module.sanitize_row(row)
-    except ValueError as exc:
-        assert "shortcut" in str(exc)
-    else:
-        raise AssertionError("sanitize_row must reject rows without a shortcut")
+if __name__ == "__main__":
+    unittest.main()
