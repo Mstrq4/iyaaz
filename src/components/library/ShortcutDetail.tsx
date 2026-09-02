@@ -2,12 +2,15 @@ import Link from 'next/link';
 
 import { detailCopy, libraryCopy, type Locale } from '../../lib/i18n';
 import type { LibraryRecord, LocalizedLibraryRecord } from '../../lib/library/types';
+import { parseRequiredInputs } from '../../lib/prompt/schema';
+import { PromptBuilder } from '../prompt/PromptBuilder';
 import { DetailSection, type DetailField } from './DetailSection';
 
 interface ShortcutDetailProps {
   locale: Locale;
   record: LocalizedLibraryRecord;
   canonicalRecord: LibraryRecord;
+  localizedRecords: Record<Locale, LocalizedLibraryRecord>;
 }
 
 function libraryFilterHref(locale: Locale, values: Record<string, string>): string {
@@ -18,7 +21,7 @@ function libraryFilterHref(locale: Locale, values: Record<string, string>): stri
   return `/${locale}/library?${params.toString()}`;
 }
 
-export function ShortcutDetail({ locale, record, canonicalRecord }: ShortcutDetailProps) {
+export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecords }: ShortcutDetailProps) {
   const copy = detailCopy[locale];
   const recordLanguageProps = record.translationStatus === 'missing'
     ? { lang: 'ar', dir: 'rtl' as const }
@@ -55,6 +58,8 @@ export function ShortcutDetail({ locale, record, canonicalRecord }: ShortcutDeta
     field('notes', copy.notes),
   ];
 
+  const promptSchema = parseRequiredInputs(canonicalRecord.requiredInputs);
+
   return (
     <article className="shortcut-detail" data-shortcut-detail={record.id}>
       <nav className="shortcut-detail__breadcrumb" aria-label={copy.breadcrumb}>
@@ -77,6 +82,11 @@ export function ShortcutDetail({ locale, record, canonicalRecord }: ShortcutDeta
           <DetailSection id="overview" title={copy.overview} fields={overviewFields} />
           <DetailSection id="production" title={copy.production} fields={productionFields} />
           <DetailSection id="direction" title={copy.direction} fields={directionFields} />
+          <PromptBuilder
+            uiLocale={locale}
+            schema={promptSchema}
+            records={localizedRecords}
+          />
         </div>
 
         <aside className="shortcut-detail__rail" data-detail-rail aria-label={copy.facts}>
