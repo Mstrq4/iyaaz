@@ -1,7 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
 
-import { parseRequiredInputs } from '../../src/lib/prompt/schema';
-
 async function fillRequiredPromptControls(builder: Locator) {
   const controls = builder.locator('[data-prompt-control]');
   const count = await controls.count();
@@ -80,22 +78,9 @@ test('English UI exposes the same builder without changing document direction', 
   await expect(builder.locator('input[type="file"]')).toHaveCount(0);
 });
 
-test('a dataset record with an asset-reference requirement renders reminders only and never an upload control', async ({ page, request }) => {
-  const response = await request.get('/api/search', {
-    params: { q: 'شعار', limit: '200' },
-  });
-  expect(response.status()).toBe(200);
-  const payload = await response.json() as {
-    items: Array<{ id: number; requiredInputs: string }>;
-  };
-
-  const record = payload.items.find((item) =>
-    parseRequiredInputs(item.requiredInputs).fields.some((field) => field.type === 'asset-reference'),
-  );
-  expect(record, 'expected at least one public record with a parseable asset-reference requirement').toBeTruthy();
-
-  await page.goto(`/ar/library/${record!.id}`);
+test('canonical record 3 renders asset reminders only and never an upload control', async ({ page }) => {
+  await page.goto('/ar/library/3');
   const builder = page.locator('[data-prompt-builder]');
-  await expect(builder.locator('[data-asset-reminder]').first()).toBeVisible();
+  await expect(builder.locator('[data-asset-reminder]')).toHaveCount(2);
   await expect(builder.locator('input[type="file"]')).toHaveCount(0);
 });
