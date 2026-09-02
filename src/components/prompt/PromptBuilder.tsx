@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
-import { promptBuilderCopy, type Locale } from '../../lib/i18n';
+import type { Locale } from '../../lib/i18n';
 import type { LocalizedLibraryRecord } from '../../lib/library/types';
 import { buildPrompt, type PromptOutputLanguage, type PromptTone } from '../../lib/prompt/build';
+import { promptBuilderCopy } from '../../lib/prompt/copy';
 import type { PromptFieldDefinition, PromptSchema } from '../../lib/prompt/schema';
 import { IyaazIcon } from '../icons/IyaazIcon';
 
@@ -46,7 +47,7 @@ function FieldControl({
     'aria-required': field.required,
     'aria-invalid': invalid || undefined,
     value,
-    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onChange(event.target.value),
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onChange(event.target.value),
   } as const;
 
   if (field.type === 'textarea') {
@@ -92,7 +93,7 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
     });
   };
 
-  const handleGenerate = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const missing = interactiveFields
       .filter((field) => field.required && !values[field.id]?.trim())
