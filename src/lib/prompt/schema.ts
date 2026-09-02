@@ -18,9 +18,12 @@ const TEXT_HINTS = /^(?:text|short text|string|نص|نص قصير)$/iu;
 const TEXTAREA_HINTS = /^(?:textarea|long text|multiline|description|brief|context|نص طويل|متعدد الأسطر|وصف|نبذة|سياق)$/iu;
 const NUMBER_HINTS = /^(?:number|numeric|count|quantity|integer|رقم|عدد|كمية)$/iu;
 const ASSET_HINTS = /(?:asset|attachment|attached|upload|file|logo|image|reference|brand identity|مرفق|إرفاق|ملف|شعار|صورة|مرجع|هوية)/iu;
+const INFERRED_ASSET_LABEL = /(?:\b(?:logo|image|attachment|file|reference)\b|شعار|صورة|مرجع|ملف)/iu;
 const BULLET_PREFIX = /^\s*(?:(?:[-*•–—])\s+|(?:\d+|[٠-٩]+)[.)-]\s*)/u;
 const LABEL_SEPARATOR = /\s*[:：]\s*/u;
 const EXPLICIT_SELECT = /[\[(]([^\])]+)[\])]/u;
+const COMMA_SEPARATOR = /\s*[,،]\s*/u;
+const TRAILING_LIST_PUNCTUATION = /[.。؟?]+$/u;
 
 function normalizeSegment(value: string): string {
   return value.replace(BULLET_PREFIX, '').replace(/\s+/gu, ' ').trim();
@@ -47,7 +50,7 @@ function parseSelectOptions(value: string): string[] | undefined {
 
   const separator = match[1].includes('|')
     ? /\s*\|\s*/u
-    : /\s*[,،]\s*/u;
+    : COMMA_SEPARATOR;
   const options = match[1]
     .split(separator)
     .map((option) => option.trim())
@@ -72,6 +75,27 @@ function inferExplicitType(label: string, hint: string, source: string): Pick<Pr
   return undefined;
 }
 
+function splitConservativeCommaList(source: string): string[] | undefined {
+  if (!COMMA_SEPARATOR.test(source)) return undefined;
+
+  const parts = source
+    .split(COMMA_SEPARATOR)
+    .map((part, index, values) => {
+      const normalized = normalizeSegment(part);
+      return index === values.length - 1
+        ? normalized.replace(TRAILING_LIST_PUNCTUATION, '').trim()
+        : normalized;
+    })
+    .filter(Boolean);
+
+  if (parts.length < 3 || parts.length > 20) return undefined;
+  if (parts.some((part) => part.length > 80)) return undefined;
+  if (parts.some((part) => /[.!؟?]/u.test(part))) return undefined;
+  if (parts.some((part) => LABEL_SEPARATOR.test(part))) return undefined;
+
+  return parts;
+}
+
 function fallbackSchema(source: string): PromptSchema {
   return {
     fallback: true,
@@ -89,10 +113,14 @@ export function parseRequiredInputs(requiredInputs: string): PromptSchema {
   const source = requiredInputs.trim();
   if (!source) return { fields: [], fallback: false };
 
-  const rawSegments = source
+  let rawSegments = source
     .split(/\r?\n|[؛;]+/u)
     .map(normalizeSegment)
     .filter(Boolean);
+
+  if (rawSegments.length === 1) {
+    rawSegments = splitConservativeCommaList(rawSegments[0]!) ?? rawSegments;
+  }
 
   if (rawSegments.length === 0) return { fields: [], fallback: false };
 
@@ -114,7 +142,7 @@ export function parseRequiredInputs(requiredInputs: string): PromptSchema {
     let typeInfo = explicit;
 
     if (!typeInfo && rawSegments.length > 1 && !hint && label.length <= 80) {
-      typeInfo = ASSET_HINTS.test(label)
+      typeInfo = INFERRED_ASSET_LABEL.test(label)
         ? { type: 'asset-reference' as const }
         : { type: 'text' as const };
     }
