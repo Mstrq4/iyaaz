@@ -1,8 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 import { parseRequiredInputs } from '../../src/lib/prompt/schema';
 
-async function fillRequiredPromptControls(builder: ReturnType<Parameters<typeof test>[1]> extends never ? never : any) {
+async function fillRequiredPromptControls(builder: Locator) {
   const controls = builder.locator('[data-prompt-control]');
   const count = await controls.count();
   expect(count).toBeGreaterThan(0);
