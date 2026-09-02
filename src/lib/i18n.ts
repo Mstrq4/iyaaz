@@ -276,3 +276,5 @@ export const detailCopy: Record<Locale, DetailCopy> = {
     backToLibrary: 'Back to library',
   },
 };
+
+export { promptBuilderCopy, type PromptBuilderCopy } from './prompt/copy';
