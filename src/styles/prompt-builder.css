@@ -106,7 +106,7 @@
 
 .prompt-builder textarea {
   padding: var(--space-3);
-  line-height: var(--line-relaxed);
+  line-height: var(--line-body);
   resize: vertical;
 }
 
@@ -134,7 +134,7 @@
 }
 
 .prompt-builder__assets h3 {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-body);
 }
 
 .prompt-builder__asset {
@@ -161,7 +161,7 @@
   padding-inline: var(--space-5);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-text-on-accent);
+  color: var(--color-text-inverse);
   background: var(--color-accent);
   font-weight: 800;
   cursor: pointer;
