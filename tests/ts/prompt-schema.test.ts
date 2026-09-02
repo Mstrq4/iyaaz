@@ -3,79 +3,101 @@ import test from 'node:test';
 
 import { parseRequiredInputs } from '../../src/lib/prompt/schema.ts';
 
-test('parses explicit structured required inputs into deterministic field types and stable ids', () => {
-  const schema = parseRequiredInputs([
-    'Project name: text',
-    'Creative brief: textarea',
-    'Quantity: number',
-    'Tone: [Formal | Casual | Premium]',
-    'Brand logo: asset',
+type Descriptor = {
+  id: string;
+  label: string;
+  kind: 'text' | 'textarea' | 'select' | 'boolean';
+  required: boolean;
+  options?: string[];
+  sourceFragment: string;
+};
+
+function descriptors(source: string): Descriptor[] {
+  return parseRequiredInputs(source) as unknown as Descriptor[];
+}
+
+test('parses bullets, numbered items and semicolon requirements in stable source order', () => {
+  const fields = descriptors([
+    '- Project name',
+    '2. Creative brief',
+    'Target audience; Delivery constraints',
   ].join('\n'));
 
-  assert.equal(schema.fallback, false);
-  assert.deepEqual(schema.fields.map(({ id, type, required }) => ({ id, type, required })), [
-    { id: 'project-name', type: 'text', required: true },
-    { id: 'creative-brief', type: 'textarea', required: true },
-    { id: 'quantity', type: 'number', required: true },
-    { id: 'tone', type: 'select', required: true },
-    { id: 'brand-logo', type: 'asset-reference', required: true },
+  assert.deepEqual(fields.map(({ label, kind }) => ({ label, kind })), [
+    { label: 'Project name', kind: 'text' },
+    { label: 'Creative brief', kind: 'text' },
+    { label: 'Target audience', kind: 'text' },
+    { label: 'Delivery constraints', kind: 'text' },
   ]);
-  assert.deepEqual(schema.fields[3]?.options, ['Formal', 'Casual', 'Premium']);
+  assert.ok(fields.every((field) => field.required));
 });
 
-test('recognizes clear Arabic field hints without changing source labels', () => {
-  const schema = parseRequiredInputs([
-    'اسم المشروع: نص',
-    'وصف المشروع: نص طويل',
-    'عدد النسخ: رقم',
-    'الأسلوب: [رسمي | ودود]',
-    'الشعار: مرفق',
-  ].join('؛ '));
+test('recognizes explicit source options as select and explicit yes/no requirements as boolean', () => {
+  const fields = descriptors([
+    'Tone: [Formal | Casual | Premium]',
+    'Include logo? yes/no',
+    'هل توجد هوية بصرية؟ نعم/لا',
+  ].join('\n'));
 
-  assert.equal(schema.fallback, false);
-  assert.deepEqual(schema.fields.map(({ label, type }) => ({ label, type })), [
-    { label: 'اسم المشروع', type: 'text' },
-    { label: 'وصف المشروع', type: 'textarea' },
-    { label: 'عدد النسخ', type: 'number' },
-    { label: 'الأسلوب', type: 'select' },
-    { label: 'الشعار', type: 'asset-reference' },
+  assert.deepEqual(fields.map(({ label, kind }) => ({ label, kind })), [
+    { label: 'Tone', kind: 'select' },
+    { label: 'Include logo?', kind: 'boolean' },
+    { label: 'هل توجد هوية بصرية؟', kind: 'boolean' },
+  ]);
+  assert.deepEqual(fields[0]?.options, ['Formal', 'Casual', 'Premium']);
+});
+
+test('uses textarea only when context is explicitly long or a fragment is long enough to need it', () => {
+  const fields = descriptors([
+    'Project name: text',
+    'Creative brief: textarea',
+    `Production context: ${'Detailed operational context '.repeat(7).trim()}`,
+  ].join('\n'));
+
+  assert.deepEqual(fields.map(({ label, kind }) => ({ label, kind })), [
+    { label: 'Project name', kind: 'text' },
+    { label: 'Creative brief', kind: 'textarea' },
+    { label: 'Production context', kind: 'textarea' },
   ]);
 });
 
-test('parses the canonical record 3 comma list conservatively and identifies attachment reminders', () => {
+test('parses canonical record 3 comma list conservatively without inventing upload fields', () => {
   const source = 'صورة الواجهة، العرض والارتفاع، عدد ومقاسات الفتحات، مواقع الأبواب والنوافذ، الشعار، النصوص، ألوان الهوية، نوع النشاط، قيود الموقع.';
-  const schema = parseRequiredInputs(source);
+  const fields = descriptors(source);
 
-  assert.equal(schema.fallback, false);
-  assert.deepEqual(schema.fields.map(({ label, type }) => ({ label, type })), [
-    { label: 'صورة الواجهة', type: 'asset-reference' },
-    { label: 'العرض والارتفاع', type: 'text' },
-    { label: 'عدد ومقاسات الفتحات', type: 'text' },
-    { label: 'مواقع الأبواب والنوافذ', type: 'text' },
-    { label: 'الشعار', type: 'asset-reference' },
-    { label: 'النصوص', type: 'text' },
-    { label: 'ألوان الهوية', type: 'text' },
-    { label: 'نوع النشاط', type: 'text' },
-    { label: 'قيود الموقع', type: 'text' },
+  assert.equal(fields.length, 9);
+  assert.deepEqual(fields.map((field) => field.label), [
+    'صورة الواجهة',
+    'العرض والارتفاع',
+    'عدد ومقاسات الفتحات',
+    'مواقع الأبواب والنوافذ',
+    'الشعار',
+    'النصوص',
+    'ألوان الهوية',
+    'نوع النشاط',
+    'قيود الموقع',
   ]);
+  assert.ok(fields.every((field) => field.kind === 'text'));
 });
 
-test('falls back to one textarea when structured meaning is ambiguous instead of guessing fields', () => {
+test('falls back to a single project_details textarea when structured meaning is ambiguous', () => {
   const source = 'قدّم كل المعلومات المناسبة للمشروع بحسب السياق، مع أي تفاصيل تراها مهمة للتنفيذ.';
-  const schema = parseRequiredInputs(source);
+  const fields = descriptors(source);
 
-  assert.equal(schema.fallback, true);
-  assert.equal(schema.fields.length, 1);
-  assert.equal(schema.fields[0]?.type, 'textarea');
-  assert.equal(schema.fields[0]?.source, source);
-  assert.equal(schema.fields[0]?.required, true);
+  assert.deepEqual(fields, [{
+    id: 'project_details',
+    label: 'Project details',
+    kind: 'textarea',
+    required: true,
+    sourceFragment: source,
+  }]);
 });
 
-test('empty required-input text produces an empty deterministic schema', () => {
-  assert.deepEqual(parseRequiredInputs('   '), { fields: [], fallback: false });
+test('empty required-input text produces an empty descriptor list', () => {
+  assert.deepEqual(descriptors('   '), []);
 });
 
 test('duplicate labels receive deterministic unique ids while preserving order', () => {
-  const schema = parseRequiredInputs('Reference: text\nReference: text\nReference: text');
-  assert.deepEqual(schema.fields.map((field) => field.id), ['reference', 'reference-2', 'reference-3']);
+  const fields = descriptors('Reference: text\nReference: text\nReference: text');
+  assert.deepEqual(fields.map((field) => field.id), ['reference', 'reference-2', 'reference-3']);
 });
