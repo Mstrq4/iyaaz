@@ -7,16 +7,15 @@ export interface PromptBuilderCopy {
   outputLanguage: string;
   arabic: string;
   english: string;
-  tone: string;
-  toneNone: string;
-  toneProfessional: string;
-  toneConcise: string;
-  toneExpressive: string;
   fallbackField: string;
   selectPlaceholder: string;
+  booleanYes: string;
+  booleanNo: string;
   requiredField: string;
   attachments: string;
   assetReminder: string;
+  notes: string;
+  notesPlaceholder: string;
   validation: string;
   generate: string;
   output: string;
@@ -32,16 +31,15 @@ export const promptBuilderCopy: Record<Locale, PromptBuilderCopy> = {
     outputLanguage: 'لغة المخرجات',
     arabic: 'العربية',
     english: 'English',
-    tone: 'النبرة والأسلوب',
-    toneNone: 'بدون نبرة إضافية',
-    toneProfessional: 'احترافية',
-    toneConcise: 'موجزة',
-    toneExpressive: 'تعبيرية',
-    fallbackField: 'المدخلات المطلوبة',
+    fallbackField: 'تفاصيل المشروع',
     selectPlaceholder: 'اختر قيمة',
+    booleanYes: 'نعم',
+    booleanNo: 'لا',
     requiredField: 'هذا الحقل مطلوب.',
     attachments: 'مرفقات مطلوبة',
     assetReminder: 'أرفق هذا الأصل عند استخدام النص في الأداة المستهدفة؛ إيعاز لا يرفع الملفات.',
+    notes: 'ملاحظات إضافية',
+    notesPlaceholder: 'أضف أي سياق اختياري لا تغطيه الحقول أعلاه.',
     validation: 'أكمل الحقول المطلوبة قبل إنشاء النص.',
     generate: 'إنشاء النص الكامل',
     output: 'النص الجاهز',
@@ -55,16 +53,15 @@ export const promptBuilderCopy: Record<Locale, PromptBuilderCopy> = {
     outputLanguage: 'Output language',
     arabic: 'العربية',
     english: 'English',
-    tone: 'Tone and style',
-    toneNone: 'No additional tone',
-    toneProfessional: 'Professional',
-    toneConcise: 'Concise',
-    toneExpressive: 'Expressive',
-    fallbackField: 'Required inputs',
+    fallbackField: 'Project details',
     selectPlaceholder: 'Choose a value',
+    booleanYes: 'Yes',
+    booleanNo: 'No',
     requiredField: 'This field is required.',
     attachments: 'Required attachments',
     assetReminder: 'Attach this asset when you use the prompt in the target tool; IYAAZ does not upload files.',
+    notes: 'Additional notes',
+    notesPlaceholder: 'Add optional context that is not covered by the fields above.',
     validation: 'Complete the required fields before generating the prompt.',
     generate: 'Generate full prompt',
     output: 'Copy-ready prompt',
