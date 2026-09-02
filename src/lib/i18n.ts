@@ -173,3 +173,106 @@ export const libraryCopy: Record<Locale, LibraryCopy> = {
     translationNotice: 'English catalog translations are not available in this snapshot yet. Canonical Arabic source content is shown where needed.',
   },
 };
+
+export interface DetailCopy {
+  breadcrumb: string;
+  library: string;
+  recordLabel: string;
+  overview: string;
+  production: string;
+  direction: string;
+  facts: string;
+  id: string;
+  shortcut: string;
+  type: string;
+  domain: string;
+  category: string;
+  subcategory: string;
+  functionText: string;
+  requiredInputs: string;
+  executionInstructions: string;
+  outputs: string;
+  sizeRatio: string;
+  materialsTech: string;
+  lighting: string;
+  installationExecution: string;
+  visualStyle: string;
+  brandCompliance: string;
+  combinedShortcuts: string;
+  bestUse: string;
+  keywords: string;
+  assetType: string;
+  notes: string;
+  notFoundHeading: string;
+  notFoundDescription: string;
+  backToLibrary: string;
+}
+
+export const detailCopy: Record<Locale, DetailCopy> = {
+  ar: {
+    breadcrumb: 'مسار الاختصار',
+    library: 'المكتبة',
+    recordLabel: 'اختصار',
+    overview: 'نظرة عامة',
+    production: 'متطلبات التنفيذ',
+    direction: 'التوجيه الإبداعي',
+    facts: 'بيانات الاختصار',
+    id: 'المعرّف',
+    shortcut: 'الاختصار',
+    type: 'النوع',
+    domain: 'المجال',
+    category: 'الفئة',
+    subcategory: 'الفئة الفرعية',
+    functionText: 'الوظيفة',
+    requiredInputs: 'المدخلات المطلوبة',
+    executionInstructions: 'تعليمات التنفيذ',
+    outputs: 'المخرجات',
+    sizeRatio: 'المقاس والنسبة',
+    materialsTech: 'الخامات والتقنية',
+    lighting: 'الإضاءة',
+    installationExecution: 'التركيب والتنفيذ',
+    visualStyle: 'الأسلوب البصري',
+    brandCompliance: 'الالتزام بالهوية',
+    combinedShortcuts: 'الاختصارات المدمجة',
+    bestUse: 'أفضل استخدام',
+    keywords: 'الكلمات المفتاحية',
+    assetType: 'نوع الأصل',
+    notes: 'ملاحظات',
+    notFoundHeading: 'الاختصار غير موجود',
+    notFoundDescription: 'تعذر العثور على الاختصار المطلوب في مكتبة إيعاز.',
+    backToLibrary: 'العودة إلى المكتبة',
+  },
+  en: {
+    breadcrumb: 'Shortcut breadcrumb',
+    library: 'Library',
+    recordLabel: 'Shortcut',
+    overview: 'Overview',
+    production: 'Production requirements',
+    direction: 'Creative direction',
+    facts: 'Shortcut facts',
+    id: 'ID',
+    shortcut: 'Shortcut',
+    type: 'Type',
+    domain: 'Domain',
+    category: 'Category',
+    subcategory: 'Subcategory',
+    functionText: 'Function',
+    requiredInputs: 'Required inputs',
+    executionInstructions: 'Execution instructions',
+    outputs: 'Outputs',
+    sizeRatio: 'Size and ratio',
+    materialsTech: 'Materials and technology',
+    lighting: 'Lighting',
+    installationExecution: 'Installation and execution',
+    visualStyle: 'Visual style',
+    brandCompliance: 'Brand compliance',
+    combinedShortcuts: 'Combined shortcuts',
+    bestUse: 'Best use',
+    keywords: 'Keywords',
+    assetType: 'Asset type',
+    notes: 'Notes',
+    notFoundHeading: 'Shortcut not found',
+    notFoundDescription: 'The requested shortcut could not be found in the IYAAZ library.',
+    backToLibrary: 'Back to library',
+  },
+};
