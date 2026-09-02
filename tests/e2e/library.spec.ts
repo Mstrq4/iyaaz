@@ -117,7 +117,7 @@ for (const locale of ['ar', 'en'] as const) {
     expect(response?.status()).toBe(200);
     await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
     await expect(page.locator('[data-shortcut-detail="3"]')).toBeVisible();
-    await expect(page.getByText('/ACPStorefrontLuxury', { exact: true })).toBeVisible();
+    await expect(page.locator('.shortcut-detail__shortcut')).toHaveText('/ACPStorefrontLuxury');
     await expect(page.locator('[data-detail-section]')).toHaveCount(3);
 
     const expectedFields = DETAIL_FIELDS.filter((field) => {
