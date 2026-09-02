@@ -1,13 +1,14 @@
 export {
   parseRequiredInputs,
-  type PromptFieldDefinition,
-  type PromptFieldType,
-  type PromptSchema,
+  type PromptFieldDescriptor,
+  type PromptFieldKind,
 } from './schema';
 export {
-  buildPrompt,
-  type BuildPromptOptions,
-  type PromptOutputLanguage,
-  type PromptTone,
-} from './build';
+  assemblePrompt,
+  isAttachmentRequirement,
+  type AssemblePromptOptions,
+  type AssembledPrompt,
+  type PromptFieldValue,
+  type PromptLanguage,
+} from './assemble';
 export { promptBuilderCopy, type PromptBuilderCopy } from './copy';
