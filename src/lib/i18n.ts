@@ -277,4 +277,4 @@ export const detailCopy: Record<Locale, DetailCopy> = {
   },
 };
 
-export { promptBuilderCopy, type PromptBuilderCopy } from './prompt/copy';
+export { promptBuilderCopy, type PromptBuilderCopy } from './prompt/copy.ts';
