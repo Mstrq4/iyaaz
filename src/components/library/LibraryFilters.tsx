@@ -55,9 +55,10 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
     <fieldset className="library-filters">
       <legend className="sr-only">{copy.filters}</legend>
 
-      <label className="library-filter">
-        <span>{copy.domain}</span>
+      <div className="library-filter">
+        <span><label htmlFor="library-domain">{copy.domain}</label></span>
         <select
+          id="library-domain"
           value={state.domain}
           onChange={(event) => onPatch({ domain: event.target.value })}
           disabled={!taxonomy}
@@ -69,11 +70,12 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="library-filter">
-        <span>{copy.category}</span>
+      <div className="library-filter">
+        <span><label htmlFor="library-category">{copy.category}</label></span>
         <select
+          id="library-category"
           value={state.category}
           onChange={(event) => onPatch({ category: event.target.value })}
           disabled={!state.domain || !selectedDomain}
@@ -85,11 +87,12 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="library-filter">
-        <span>{copy.subcategory}</span>
+      <div className="library-filter">
+        <span><label htmlFor="library-subcategory">{copy.subcategory}</label></span>
         <select
+          id="library-subcategory"
           value={state.subcategory}
           onChange={(event) => onPatch({ subcategory: event.target.value })}
           disabled={!state.category || !selectedCategory}
@@ -101,11 +104,12 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="library-filter">
-        <span>{copy.type}</span>
+      <div className="library-filter">
+        <span><label htmlFor="library-type">{copy.type}</label></span>
         <select
+          id="library-type"
           value={state.type}
           onChange={(event) => onPatch({ type: event.target.value })}
           disabled={!taxonomy}
@@ -117,11 +121,12 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label className="library-filter library-filter--sort">
-        <span>{copy.sort}</span>
+      <div className="library-filter library-filter--sort">
+        <span><label htmlFor="library-sort">{copy.sort}</label></span>
         <select
+          id="library-sort"
           value={state.sort}
           onChange={(event) => onPatch({ sort: event.target.value as SearchSort })}
         >
@@ -129,7 +134,7 @@ export function LibraryFilters({ copy, state, taxonomy, onPatch }: LibraryFilter
             <option key={sort} value={sort}>{sortLabels[sort]}</option>
           ))}
         </select>
-      </label>
+      </div>
     </fieldset>
   );
 }
