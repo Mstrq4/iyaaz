@@ -105,7 +105,7 @@ function inferKind(label: string, hint: string, sourceFragment: string): Pick<Pr
 
 function looksAmbiguousNarrative(source: string): boolean {
   const words = source.split(/\s+/u).filter(Boolean);
-  return source.length > 80 && words.length >= 8 && NARRATIVE_PUNCTUATION.test(source);
+  return words.length >= 8 && NARRATIVE_PUNCTUATION.test(source);
 }
 
 export function parseRequiredInputs(requiredInputs: string): PromptFieldDescriptor[] {
