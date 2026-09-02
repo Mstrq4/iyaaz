@@ -1,18 +1,58 @@
 'use client';
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import type { Locale } from '../../lib/i18n';
 import type { LocalizedLibraryRecord } from '../../lib/library/types';
-import { buildPrompt, type PromptOutputLanguage, type PromptTone } from '../../lib/prompt/build';
+import {
+  assemblePrompt,
+  isAttachmentRequirement,
+  type PromptFieldValue,
+  type PromptLanguage,
+} from '../../lib/prompt/assemble';
 import { promptBuilderCopy } from '../../lib/prompt/copy';
-import type { PromptFieldDefinition, PromptSchema } from '../../lib/prompt/schema';
+import type { PromptFieldDescriptor } from '../../lib/prompt/schema';
 import { IyaazIcon } from '../icons/IyaazIcon';
+import { PromptField } from './PromptField';
 
 interface PromptBuilderProps {
   uiLocale: Locale;
-  schema: PromptSchema;
+  schema: PromptFieldDescriptor[];
   records: Record<Locale, LocalizedLibraryRecord>;
+}
+
+interface PromptDraft {
+  values: Record<string, string>;
+  notes: string;
+}
+
+function draftKey(recordId: number, language: PromptLanguage): string {
+  return `iyaaz:prompt-draft:${recordId}:${language}`;
+}
+
+function readDraft(recordId: number, language: PromptLanguage): PromptDraft {
+  try {
+    const raw = sessionStorage.getItem(draftKey(recordId, language));
+    if (!raw) return { values: {}, notes: '' };
+    const parsed = JSON.parse(raw) as Partial<PromptDraft>;
+    const values = parsed.values && typeof parsed.values === 'object'
+      ? Object.fromEntries(Object.entries(parsed.values).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+      : {};
+    return {
+      values,
+      notes: typeof parsed.notes === 'string' ? parsed.notes : '',
+    };
+  } catch {
+    return { values: {}, notes: '' };
+  }
+}
+
+function writeDraft(recordId: number, language: PromptLanguage, draft: PromptDraft): void {
+  try {
+    sessionStorage.setItem(draftKey(recordId, language), JSON.stringify(draft));
+  } catch {
+    // Session persistence is best-effort; prompt generation remains fully local and functional.
+  }
 }
 
 function fallbackCopy(value: string): boolean {
@@ -28,69 +68,50 @@ function fallbackCopy(value: string): boolean {
   return copied;
 }
 
-function FieldControl({
-  field,
-  value,
-  invalid,
-  label,
-  onChange,
-}: {
-  field: PromptFieldDefinition;
-  value: string;
-  invalid: boolean;
-  label: string;
-  onChange: (value: string) => void;
-}) {
-  const common = {
-    id: `prompt-field-${field.id}`,
-    'data-prompt-control': true,
-    'aria-required': field.required,
-    'aria-invalid': invalid || undefined,
-    value,
-    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => onChange(event.target.value),
-  } as const;
-
-  if (field.type === 'textarea') {
-    return <textarea {...common} rows={4} />;
-  }
-
-  if (field.type === 'select') {
-    return (
-      <select {...common}>
-        <option value="">{label}</option>
-        {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
-    );
-  }
-
-  return <input {...common} type={field.type === 'number' ? 'number' : 'text'} />;
-}
-
 export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps) {
   const copy = promptBuilderCopy[uiLocale];
+  const [outputLanguage, setOutputLanguage] = useState<PromptLanguage>(uiLocale);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [outputLanguage, setOutputLanguage] = useState<PromptOutputLanguage>(uiLocale);
-  const [tone, setTone] = useState<PromptTone>('');
+  const [notes, setNotes] = useState('');
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [output, setOutput] = useState('');
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordId = records.ar.id;
+
+  useEffect(() => {
+    const draft = readDraft(recordId, outputLanguage);
+    setValues(draft.values);
+    setNotes(draft.notes);
+    setInvalidFields(new Set());
+    setOutput('');
+  }, [recordId, outputLanguage]);
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  const interactiveFields = schema.fields.filter((field) => field.type !== 'asset-reference');
-  const assetFields = schema.fields.filter((field) => field.type === 'asset-reference');
+  const interactiveFields = schema.filter((field) => !isAttachmentRequirement(field.sourceFragment));
 
   const setFieldValue = (fieldId: string, value: string) => {
-    setValues((current) => ({ ...current, [fieldId]: value }));
+    setValues((current) => {
+      const next = { ...current, [fieldId]: value };
+      writeDraft(recordId, outputLanguage, { values: next, notes });
+      return next;
+    });
+    setOutput('');
     setInvalidFields((current) => {
       if (!current.has(fieldId)) return current;
       const next = new Set(current);
       next.delete(fieldId);
       return next;
     });
+  };
+
+  const setDraftNotes = (value: string) => {
+    setNotes(value);
+    writeDraft(recordId, outputLanguage, { values, notes: value });
+    setOutput('');
   };
 
   const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
@@ -106,13 +127,17 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
     }
 
     setInvalidFields(new Set());
-    setOutput(buildPrompt({
-      record: records[outputLanguage],
-      fields: schema.fields,
-      values,
-      outputLanguage,
-      tone,
+    const fieldValues: PromptFieldValue[] = schema.map((field) => ({
+      ...field,
+      value: values[field.id] ?? '',
     }));
+    const result = assemblePrompt({
+      record: records[outputLanguage],
+      language: outputLanguage,
+      fields: fieldValues,
+      notes,
+    });
+    setOutput(result.text);
   };
 
   const handleCopy = async () => {
@@ -132,7 +157,7 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
   };
 
   return (
-    <section className="prompt-builder" data-prompt-builder aria-labelledby="prompt-builder-heading">
+    <section id="prompt-builder" className="prompt-builder" data-prompt-builder aria-labelledby="prompt-builder-heading">
       <header className="prompt-builder__header">
         <div>
           <p className="prompt-builder__eyebrow">{copy.eyebrow}</p>
@@ -147,57 +172,44 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
             <span>{copy.outputLanguage}</span>
             <select
               value={outputLanguage}
-              onChange={(event) => setOutputLanguage(event.target.value as PromptOutputLanguage)}
+              onChange={(event) => setOutputLanguage(event.target.value as PromptLanguage)}
             >
               <option value="ar">{copy.arabic}</option>
               <option value="en">{copy.english}</option>
             </select>
           </label>
-
-          <label>
-            <span>{copy.tone}</span>
-            <select value={tone} onChange={(event) => setTone(event.target.value as PromptTone)}>
-              <option value="">{copy.toneNone}</option>
-              <option value="professional">{copy.toneProfessional}</option>
-              <option value="concise">{copy.toneConcise}</option>
-              <option value="expressive">{copy.toneExpressive}</option>
-            </select>
-          </label>
         </div>
 
-        {interactiveFields.length > 0 ? (
+        {schema.length > 0 ? (
           <div className="prompt-builder__fields">
-            {interactiveFields.map((field) => {
-              const label = schema.fallback && field.id === 'required-inputs' ? copy.fallbackField : field.label;
-              const invalid = invalidFields.has(field.id);
-              return (
-                <div className="prompt-builder__field" data-prompt-field key={field.id}>
-                  <label htmlFor={`prompt-field-${field.id}`}>{label}</label>
-                  <FieldControl
-                    field={field}
-                    value={values[field.id] ?? ''}
-                    invalid={invalid}
-                    label={copy.selectPlaceholder}
-                    onChange={(value) => setFieldValue(field.id, value)}
-                  />
-                  {invalid ? <span className="prompt-builder__field-error">{copy.requiredField}</span> : null}
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {assetFields.length > 0 ? (
-          <div className="prompt-builder__assets" aria-label={copy.attachments}>
-            <h3>{copy.attachments}</h3>
-            {assetFields.map((field) => (
-              <div className="prompt-builder__asset" data-asset-reminder key={field.id}>
-                <IyaazIcon name="external" />
-                <span><strong>{field.label}</strong> — {copy.assetReminder}</span>
-              </div>
+            {schema.map((field) => (
+              <PromptField
+                key={field.id}
+                field={field}
+                displayLabel={field.id === 'project_details' ? copy.fallbackField : field.label}
+                value={values[field.id] ?? ''}
+                invalid={invalidFields.has(field.id)}
+                selectPlaceholder={copy.selectPlaceholder}
+                booleanYes={copy.booleanYes}
+                booleanNo={copy.booleanNo}
+                requiredMessage={copy.requiredField}
+                assetReminder={copy.assetReminder}
+                onChange={(value) => setFieldValue(field.id, value)}
+              />
             ))}
           </div>
         ) : null}
+
+        <div className="prompt-builder__field prompt-builder__notes">
+          <label htmlFor="prompt-builder-notes">{copy.notes}</label>
+          <textarea
+            id="prompt-builder-notes"
+            value={notes}
+            placeholder={copy.notesPlaceholder}
+            rows={4}
+            onChange={(event) => setDraftNotes(event.target.value)}
+          />
+        </div>
 
         {invalidFields.size > 0 ? <p className="prompt-builder__alert" role="alert">{copy.validation}</p> : null}
 
