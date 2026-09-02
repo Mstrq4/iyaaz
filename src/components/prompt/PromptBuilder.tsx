@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from 'react';
 
 import { promptBuilderCopy, type Locale } from '../../lib/i18n';
 import type { LocalizedLibraryRecord } from '../../lib/library/types';
@@ -25,14 +32,17 @@ interface PromptDraft {
   notes: string;
 }
 
+const DRAFT_CHANGE_EVENT = 'iyaaz:prompt-draft-change';
+const memoryDrafts = new Map<string, string>();
+
 function draftKey(recordId: number, language: PromptLanguage): string {
   return `iyaaz:prompt-draft:${recordId}:${language}`;
 }
 
-function readDraft(recordId: number, language: PromptLanguage): PromptDraft {
+function parseDraft(raw: string): PromptDraft {
+  if (!raw) return { values: {}, notes: '' };
+
   try {
-    const raw = sessionStorage.getItem(draftKey(recordId, language));
-    if (!raw) return { values: {}, notes: '' };
     const parsed = JSON.parse(raw) as Partial<PromptDraft>;
     const values = parsed.values && typeof parsed.values === 'object'
       ? Object.fromEntries(Object.entries(parsed.values).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
@@ -46,12 +56,43 @@ function readDraft(recordId: number, language: PromptLanguage): PromptDraft {
   }
 }
 
-function writeDraft(recordId: number, language: PromptLanguage, draft: PromptDraft): void {
+function readDraftSnapshot(key: string): string {
+  if (typeof window === 'undefined') return '';
+
   try {
-    sessionStorage.setItem(draftKey(recordId, language), JSON.stringify(draft));
+    return window.sessionStorage.getItem(key) ?? memoryDrafts.get(key) ?? '';
   } catch {
-    // Session persistence is best-effort; prompt generation remains fully local and functional.
+    return memoryDrafts.get(key) ?? '';
   }
+}
+
+function writeDraftSnapshot(key: string, draft: PromptDraft): void {
+  const raw = JSON.stringify(draft);
+  memoryDrafts.set(key, raw);
+
+  try {
+    window.sessionStorage.setItem(key, raw);
+  } catch {
+    // Session persistence is best-effort; the in-memory draft keeps the builder functional.
+  }
+
+  window.dispatchEvent(new CustomEvent(DRAFT_CHANGE_EVENT, { detail: key }));
+}
+
+function subscribeToDraft(key: string, onStoreChange: () => void): () => void {
+  const handleDraftChange = (event: Event) => {
+    if (event instanceof CustomEvent && event.detail === key) onStoreChange();
+  };
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === key) onStoreChange();
+  };
+
+  window.addEventListener(DRAFT_CHANGE_EVENT, handleDraftChange);
+  window.addEventListener('storage', handleStorage);
+  return () => {
+    window.removeEventListener(DRAFT_CHANGE_EVENT, handleDraftChange);
+    window.removeEventListener('storage', handleStorage);
+  };
 }
 
 function fallbackCopy(value: string): boolean {
@@ -70,21 +111,22 @@ function fallbackCopy(value: string): boolean {
 export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps) {
   const copy = promptBuilderCopy[uiLocale];
   const [outputLanguage, setOutputLanguage] = useState<PromptLanguage>(uiLocale);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [notes, setNotes] = useState('');
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [output, setOutput] = useState('');
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordId = records.ar.id;
+  const storageKey = draftKey(recordId, outputLanguage);
 
-  useEffect(() => {
-    const draft = readDraft(recordId, outputLanguage);
-    setValues(draft.values);
-    setNotes(draft.notes);
-    setInvalidFields(new Set());
-    setOutput('');
-  }, [recordId, outputLanguage]);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => subscribeToDraft(storageKey, onStoreChange),
+    [storageKey],
+  );
+  const getSnapshot = useCallback(() => readDraftSnapshot(storageKey), [storageKey]);
+  const rawDraft = useSyncExternalStore(subscribe, getSnapshot, () => '');
+  const draft = parseDraft(rawDraft);
+  const values = draft.values;
+  const notes = draft.notes;
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -93,10 +135,9 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
   const interactiveFields = schema.filter((field) => !isAttachmentRequirement(field.sourceFragment));
 
   const setFieldValue = (fieldId: string, value: string) => {
-    setValues((current) => {
-      const next = { ...current, [fieldId]: value };
-      writeDraft(recordId, outputLanguage, { values: next, notes });
-      return next;
+    writeDraftSnapshot(storageKey, {
+      values: { ...values, [fieldId]: value },
+      notes,
     });
     setOutput('');
     setInvalidFields((current) => {
@@ -108,8 +149,13 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
   };
 
   const setDraftNotes = (value: string) => {
-    setNotes(value);
-    writeDraft(recordId, outputLanguage, { values, notes: value });
+    writeDraftSnapshot(storageKey, { values, notes: value });
+    setOutput('');
+  };
+
+  const handleLanguageChange = (language: PromptLanguage) => {
+    setOutputLanguage(language);
+    setInvalidFields(new Set());
     setOutput('');
   };
 
@@ -171,7 +217,7 @@ export function PromptBuilder({ uiLocale, schema, records }: PromptBuilderProps)
             <span>{copy.outputLanguage}</span>
             <select
               value={outputLanguage}
-              onChange={(event) => setOutputLanguage(event.target.value as PromptLanguage)}
+              onChange={(event) => handleLanguageChange(event.target.value as PromptLanguage)}
             >
               <option value="ar">{copy.arabic}</option>
               <option value="en">{copy.english}</option>
