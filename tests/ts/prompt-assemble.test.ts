@@ -1,0 +1,92 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { assemblePrompt } from '../../src/lib/prompt/assemble.ts';
+import type { LocalizedLibraryRecord } from '../../src/lib/library/types.ts';
+
+type Field = {
+  id: string;
+  label: string;
+  kind: 'text' | 'textarea' | 'select' | 'boolean';
+  required: boolean;
+  options?: string[];
+  sourceFragment: string;
+  value: string;
+};
+
+function record(locale: 'ar' | 'en'): LocalizedLibraryRecord {
+  return {
+    id: 3,
+    shortcut: '/ACPStorefrontLuxury',
+    name: locale === 'ar' ? 'واجهة متجر فاخرة' : 'Luxury storefront',
+    mainDomain: locale === 'ar' ? 'التصميم' : 'Design',
+    category: locale === 'ar' ? 'واجهات' : 'Storefronts',
+    subcategory: locale === 'ar' ? 'كلادينج' : 'Cladding',
+    shortcutType: locale === 'ar' ? 'متخصص' : 'Specialized',
+    functionText: locale === 'ar' ? 'إنشاء تصور فاخر للواجهة.' : 'Create a premium storefront concept.',
+    requiredInputs: locale === 'ar' ? 'صورة الواجهة، الشعار، النصوص.' : 'Storefront image, logo, copy.',
+    executionInstructions: locale === 'ar' ? 'احترم القياسات والفتحات.' : 'Respect dimensions and openings.',
+    outputs: locale === 'ar' ? 'تصور واجهة قابل للعرض.' : 'Client-ready storefront concept.',
+    sizeRatio: '16:9',
+    materialsTech: locale === 'ar' ? 'ألمنيوم مركب' : 'Composite aluminum',
+    lighting: locale === 'ar' ? 'إضاءة هادئة' : 'Controlled lighting',
+    installationExecution: '',
+    visualStyle: locale === 'ar' ? 'فاخر ومحدود التفاصيل' : 'Premium and restrained',
+    brandCompliance: locale === 'ar' ? 'احترم ألوان الهوية' : 'Respect brand colors',
+    combinedShortcuts: '',
+    bestUse: '',
+    keywords: '',
+    assetType: '',
+    notes: '',
+    locale,
+    translationStatus: locale === 'ar' ? 'canonical' : 'translated',
+  };
+}
+
+const fields: Field[] = [
+  { id: 'store-name', label: 'Store name', kind: 'text', required: true, sourceFragment: 'Store name', value: 'Prime Mobile' },
+  { id: 'logo', label: 'Logo', kind: 'text', required: true, sourceFragment: 'Attach logo reference', value: '' },
+  { id: 'include-night', label: 'Night view', kind: 'boolean', required: true, sourceFragment: 'Night view yes/no', value: 'yes' },
+  { id: 'empty', label: 'Optional empty', kind: 'text', required: false, sourceFragment: 'Optional empty', value: '' },
+];
+
+test('assembles deterministic sections in source-field order and omits empty user fields', () => {
+  const first = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '' });
+  const second = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '' });
+
+  assert.deepEqual(second, first);
+  assert.match(first.text, /^Shortcut: \/ACPStorefrontLuxury/m);
+  assert.match(first.text, /Intent: Create a premium storefront concept\./);
+  assert.match(first.text, /- Store name: Prime Mobile/);
+  assert.match(first.text, /- Night view: Yes/);
+  assert.doesNotMatch(first.text, /Optional empty/);
+  assert.ok(first.text.indexOf('Execution instructions:') < first.text.indexOf('Expected outputs:'));
+  assert.match(first.text, /Final quality instruction:/);
+});
+
+test('selected language controls prompt framing independently from any UI locale concept', () => {
+  const ar = assemblePrompt({ record: record('ar'), language: 'ar', fields, notes: '' });
+  const en = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '' });
+
+  assert.match(ar.text, /لغة المخرجات: العربية/);
+  assert.match(ar.text, /الاختصار: \/ACPStorefrontLuxury/);
+  assert.match(en.text, /Output language: English/);
+  assert.match(en.text, /Shortcut: \/ACPStorefrontLuxury/);
+});
+
+test('free notes are optional and appear only when non-empty', () => {
+  const withoutNotes = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '   ' });
+  const withNotes = assemblePrompt({ record: record('en'), language: 'en', fields, notes: 'Keep signage legible from the street.' });
+
+  assert.doesNotMatch(withoutNotes.text, /Additional notes:/);
+  assert.match(withNotes.text, /Additional notes:\nKeep signage legible from the street\./);
+});
+
+test('asset source fragments become attachment reminders without claiming an upload occurred', () => {
+  const result = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '' });
+
+  assert.equal(result.attachmentReminders.length, 1);
+  assert.match(result.attachmentReminders[0]!, /logo/i);
+  assert.match(result.text, /Attachment reminders:/);
+  assert.doesNotMatch(result.text, /uploaded|تم الرفع/i);
+});
