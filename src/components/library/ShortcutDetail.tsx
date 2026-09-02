@@ -82,15 +82,16 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
           <DetailSection id="overview" title={copy.overview} fields={overviewFields} />
           <DetailSection id="production" title={copy.production} fields={productionFields} />
           <DetailSection id="direction" title={copy.direction} fields={directionFields} />
+        </div>
+
+        <aside className="shortcut-detail__rail" data-detail-rail>
           <PromptBuilder
             uiLocale={locale}
             schema={promptSchema}
             records={localizedRecords}
           />
-        </div>
 
-        <aside className="shortcut-detail__rail" data-detail-rail aria-label={copy.facts}>
-          <div className="shortcut-detail__facts">
+          <div className="shortcut-detail__facts" aria-label={copy.facts}>
             <h2>{copy.facts}</h2>
             <dl>
               <div>
