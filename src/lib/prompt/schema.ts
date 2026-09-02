@@ -1,31 +1,25 @@
-export type PromptFieldType = 'text' | 'textarea' | 'select' | 'number' | 'asset-reference';
+export type PromptFieldKind = 'text' | 'textarea' | 'select' | 'boolean';
 
-export interface PromptFieldDefinition {
+export interface PromptFieldDescriptor {
   id: string;
   label: string;
-  type: PromptFieldType;
+  kind: PromptFieldKind;
   required: boolean;
-  source: string;
   options?: string[];
+  sourceFragment: string;
 }
 
-export interface PromptSchema {
-  fields: PromptFieldDefinition[];
-  fallback: boolean;
-}
-
-const TEXT_HINTS = /^(?:text|short text|string|نص|نص قصير)$/iu;
-const TEXTAREA_HINTS = /^(?:textarea|long text|multiline|description|brief|context|نص طويل|متعدد الأسطر|وصف|نبذة|سياق)$/iu;
-const NUMBER_HINTS = /^(?:number|numeric|count|quantity|integer|رقم|عدد|كمية)$/iu;
-const ASSET_HINTS = /(?:asset|attachment|attached|upload|file|logo|image|reference|brand identity|مرفق|إرفاق|ملف|شعار|صورة|مرجع|هوية)/iu;
-const INFERRED_ASSET_LABEL = /(?:\b(?:logo|image|attachment|file|reference)\b|شعار|صورة|مرجع|ملف)/iu;
 const BULLET_PREFIX = /^\s*(?:(?:[-*•–—])\s+|(?:\d+|[٠-٩]+)[.)-]\s*)/u;
 const LABEL_SEPARATOR = /\s*[:：]\s*/u;
-const EXPLICIT_SELECT = /[\[(]([^\])]+)[\])]/u;
 const COMMA_SEPARATOR = /\s*[,،]\s*/u;
-const TRAILING_LIST_PUNCTUATION = /[.。؟?]+$/u;
+const TRAILING_LIST_PUNCTUATION = /[.。]+$/u;
+const TEXT_HINTS = /^(?:text|short text|string|single line|نص|نص قصير|سطر واحد)$/iu;
+const TEXTAREA_HINTS = /^(?:textarea|long text|multiline|description|brief|context|نص طويل|متعدد الأسطر|وصف|نبذة|سياق)$/iu;
+const BOOLEAN_MARKER = /(?:\b(?:yes\s*\/\s*no|true\s*\/\s*false)\b|نعم\s*\/\s*لا)/iu;
+const EXPLICIT_OPTIONS = /[\[(]([^\])]+)[\])]/u;
+const NARRATIVE_PUNCTUATION = /[.!؟?]/u;
 
-function normalizeSegment(value: string): string {
+function normalizeFragment(value: string): string {
   return value.replace(BULLET_PREFIX, '').replace(/\s+/gu, ' ').trim();
 }
 
@@ -44,13 +38,11 @@ function uniqueId(base: string, seen: Map<string, number>): string {
   return count === 1 ? base : `${base}-${count}`;
 }
 
-function parseSelectOptions(value: string): string[] | undefined {
-  const match = value.match(EXPLICIT_SELECT);
+function parseExplicitOptions(value: string): string[] | undefined {
+  const match = value.match(EXPLICIT_OPTIONS);
   if (!match?.[1]) return undefined;
 
-  const separator = match[1].includes('|')
-    ? /\s*\|\s*/u
-    : COMMA_SEPARATOR;
+  const separator = match[1].includes('|') ? /\s*\|\s*/u : COMMA_SEPARATOR;
   const options = match[1]
     .split(separator)
     .map((option) => option.trim())
@@ -60,28 +52,13 @@ function parseSelectOptions(value: string): string[] | undefined {
   return [...new Set(options)];
 }
 
-function inferExplicitType(label: string, hint: string, source: string): Pick<PromptFieldDefinition, 'type' | 'options'> | undefined {
-  const options = parseSelectOptions(hint || source);
-  if (options) return { type: 'select', options };
-
-  const normalizedHint = hint.trim();
-  if (TEXT_HINTS.test(normalizedHint)) return { type: 'text' };
-  if (TEXTAREA_HINTS.test(normalizedHint)) return { type: 'textarea' };
-  if (NUMBER_HINTS.test(normalizedHint)) return { type: 'number' };
-  if (ASSET_HINTS.test(normalizedHint) || (normalizedHint && ASSET_HINTS.test(label))) {
-    return { type: 'asset-reference' };
-  }
-
-  return undefined;
-}
-
 function splitConservativeCommaList(source: string): string[] | undefined {
   if (!COMMA_SEPARATOR.test(source)) return undefined;
 
   const parts = source
     .split(COMMA_SEPARATOR)
     .map((part, index, values) => {
-      const normalized = normalizeSegment(part);
+      const normalized = normalizeFragment(part);
       return index === values.length - 1
         ? normalized.replace(TRAILING_LIST_PUNCTUATION, '').trim()
         : normalized;
@@ -90,75 +67,93 @@ function splitConservativeCommaList(source: string): string[] | undefined {
 
   if (parts.length < 3 || parts.length > 20) return undefined;
   if (parts.some((part) => part.length > 80)) return undefined;
-  if (parts.some((part) => /[.!؟?]/u.test(part))) return undefined;
+  if (parts.some((part) => NARRATIVE_PUNCTUATION.test(part))) return undefined;
   if (parts.some((part) => LABEL_SEPARATOR.test(part))) return undefined;
-
   return parts;
 }
 
-function fallbackSchema(source: string): PromptSchema {
-  return {
-    fallback: true,
-    fields: [{
-      id: 'required-inputs',
-      label: 'Required inputs',
-      type: 'textarea',
-      required: true,
-      source,
-    }],
-  };
+function fallbackDescriptor(source: string): PromptFieldDescriptor[] {
+  return [{
+    id: 'project_details',
+    label: 'Project details',
+    kind: 'textarea',
+    required: true,
+    sourceFragment: source,
+  }];
 }
 
-export function parseRequiredInputs(requiredInputs: string): PromptSchema {
-  const source = requiredInputs.trim();
-  if (!source) return { fields: [], fallback: false };
+function stripBooleanMarker(value: string): string {
+  return value.replace(BOOLEAN_MARKER, '').replace(/\s+/gu, ' ').trim();
+}
 
-  let rawSegments = source
-    .split(/\r?\n|[؛;]+/u)
-    .map(normalizeSegment)
-    .filter(Boolean);
+function inferKind(label: string, hint: string, sourceFragment: string): Pick<PromptFieldDescriptor, 'kind' | 'options'> {
+  const options = parseExplicitOptions(hint || sourceFragment);
+  if (options) return { kind: 'select', options };
 
-  if (rawSegments.length === 1) {
-    rawSegments = splitConservativeCommaList(rawSegments[0]!) ?? rawSegments;
+  if (BOOLEAN_MARKER.test(sourceFragment)) return { kind: 'boolean' };
+
+  const normalizedHint = hint.trim();
+  if (TEXTAREA_HINTS.test(normalizedHint)) return { kind: 'textarea' };
+  if (TEXT_HINTS.test(normalizedHint)) return { kind: 'text' };
+
+  if (normalizedHint.length > 96 || label.length > 80 || sourceFragment.length > 140) {
+    return { kind: 'textarea' };
   }
 
-  if (rawSegments.length === 0) return { fields: [], fallback: false };
+  return { kind: 'text' };
+}
+
+function looksAmbiguousNarrative(source: string): boolean {
+  const words = source.split(/\s+/u).filter(Boolean);
+  return source.length > 80 && words.length >= 8 && NARRATIVE_PUNCTUATION.test(source);
+}
+
+export function parseRequiredInputs(requiredInputs: string): PromptFieldDescriptor[] {
+  const source = requiredInputs.trim();
+  if (!source) return [];
+
+  let fragments = source
+    .split(/\r?\n|[؛;]+/u)
+    .map(normalizeFragment)
+    .filter(Boolean);
+
+  if (fragments.length === 1) {
+    fragments = splitConservativeCommaList(fragments[0]!) ?? fragments;
+  }
+
+  if (fragments.length === 1 && looksAmbiguousNarrative(fragments[0]!)) {
+    return fallbackDescriptor(source);
+  }
 
   const seen = new Map<string, number>();
-  const fields: PromptFieldDefinition[] = [];
+  const fields: PromptFieldDescriptor[] = [];
 
-  for (const segment of rawSegments) {
-    const separatorMatch = segment.match(LABEL_SEPARATOR);
-    let label = segment;
+  for (const fragment of fragments) {
+    const separator = fragment.match(LABEL_SEPARATOR);
+    let label = fragment;
     let hint = '';
 
-    if (separatorMatch?.index !== undefined) {
-      label = segment.slice(0, separatorMatch.index).trim();
-      hint = segment.slice(separatorMatch.index + separatorMatch[0].length).trim();
-      if (!label || !hint) return fallbackSchema(source);
+    if (separator?.index !== undefined) {
+      label = fragment.slice(0, separator.index).trim();
+      hint = fragment.slice(separator.index + separator[0].length).trim();
+      if (!label || !hint) return fallbackDescriptor(source);
     }
 
-    const explicit = inferExplicitType(label, hint, segment);
-    let typeInfo = explicit;
-
-    if (!typeInfo && rawSegments.length > 1 && !hint && label.length <= 80) {
-      typeInfo = INFERRED_ASSET_LABEL.test(label)
-        ? { type: 'asset-reference' as const }
-        : { type: 'text' as const };
+    if (BOOLEAN_MARKER.test(fragment)) {
+      label = stripBooleanMarker(label === fragment ? fragment : label);
     }
 
-    if (!typeInfo) return fallbackSchema(source);
-
+    const inferred = inferKind(label, hint, fragment);
     const id = uniqueId(slugify(label), seen);
     fields.push({
       id,
       label,
-      type: typeInfo.type,
+      kind: inferred.kind,
       required: true,
-      source: segment,
-      ...(typeInfo.options ? { options: typeInfo.options } : {}),
+      sourceFragment: fragment,
+      ...(inferred.options ? { options: inferred.options } : {}),
     });
   }
 
-  return { fields, fallback: false };
+  return fields;
 }
