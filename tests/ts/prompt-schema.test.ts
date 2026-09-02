@@ -42,6 +42,24 @@ test('recognizes clear Arabic field hints without changing source labels', () =>
   ]);
 });
 
+test('parses the canonical record 3 comma list conservatively and identifies attachment reminders', () => {
+  const source = 'صورة الواجهة، العرض والارتفاع، عدد ومقاسات الفتحات، مواقع الأبواب والنوافذ، الشعار، النصوص، ألوان الهوية، نوع النشاط، قيود الموقع.';
+  const schema = parseRequiredInputs(source);
+
+  assert.equal(schema.fallback, false);
+  assert.deepEqual(schema.fields.map(({ label, type }) => ({ label, type })), [
+    { label: 'صورة الواجهة', type: 'asset-reference' },
+    { label: 'العرض والارتفاع', type: 'text' },
+    { label: 'عدد ومقاسات الفتحات', type: 'text' },
+    { label: 'مواقع الأبواب والنوافذ', type: 'text' },
+    { label: 'الشعار', type: 'asset-reference' },
+    { label: 'النصوص', type: 'text' },
+    { label: 'ألوان الهوية', type: 'text' },
+    { label: 'نوع النشاط', type: 'text' },
+    { label: 'قيود الموقع', type: 'text' },
+  ]);
+});
+
 test('falls back to one textarea when structured meaning is ambiguous instead of guessing fields', () => {
   const source = 'قدّم كل المعلومات المناسبة للمشروع بحسب السياق، مع أي تفاصيل تراها مهمة للتنفيذ.';
   const schema = parseRequiredInputs(source);
