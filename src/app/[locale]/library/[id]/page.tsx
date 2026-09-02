@@ -1,5 +1,6 @@
 import '../../../../styles/library.css';
 import '../../../../styles/detail.css';
+import '../../../../styles/prompt-builder.css';
 
 import { notFound } from 'next/navigation';
 
@@ -32,14 +33,20 @@ export default async function ShortcutDetailPage({ params }: ShortcutDetailPageP
   const canonicalRecord = findLibraryRecordById(records, id);
   if (!canonicalRecord) notFound();
 
-  const localizedRecord = await findLocalizedLibraryRecordById(id, rawLocale);
-  if (!localizedRecord) notFound();
+  const [arRecord, enRecord] = await Promise.all([
+    findLocalizedLibraryRecordById(id, 'ar'),
+    findLocalizedLibraryRecordById(id, 'en'),
+  ]);
+  if (!arRecord || !enRecord) notFound();
+
+  const localizedRecord = rawLocale === 'ar' ? arRecord : enRecord;
 
   return (
     <ShortcutDetail
       locale={rawLocale}
       record={localizedRecord}
       canonicalRecord={canonicalRecord}
+      localizedRecords={{ ar: arRecord, en: enRecord }}
     />
   );
 }
