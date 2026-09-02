@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import type { Locale } from '../../lib/i18n';
+import { promptBuilderCopy, type Locale } from '../../lib/i18n';
 import type { LocalizedLibraryRecord } from '../../lib/library/types';
 import {
   assemblePrompt,
@@ -10,7 +10,6 @@ import {
   type PromptFieldValue,
   type PromptLanguage,
 } from '../../lib/prompt/assemble';
-import { promptBuilderCopy } from '../../lib/prompt/copy';
 import type { PromptFieldDescriptor } from '../../lib/prompt/schema';
 import { IyaazIcon } from '../icons/IyaazIcon';
 import { PromptField } from './PromptField';
