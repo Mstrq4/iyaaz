@@ -12,6 +12,7 @@ const copy = {
     next: 'التالي',
     copyShortcut: 'نسخ الاختصار',
     copied: 'تم النسخ',
+    notFound: 'الاختصار غير موجود',
   },
   en: {
     heading: 'Shortcut Library',
@@ -24,8 +25,27 @@ const copy = {
     next: 'Next',
     copyShortcut: 'Copy shortcut',
     copied: 'Copied',
+    notFound: 'Shortcut not found',
   },
 } as const;
+
+const DETAIL_FIELDS = [
+  'functionText',
+  'requiredInputs',
+  'executionInstructions',
+  'outputs',
+  'sizeRatio',
+  'materialsTech',
+  'lighting',
+  'installationExecution',
+  'visualStyle',
+  'brandCompliance',
+  'combinedShortcuts',
+  'bestUse',
+  'keywords',
+  'assetType',
+  'notes',
+] as const;
 
 for (const locale of ['ar', 'en'] as const) {
   test(`${locale} library route renders the data-dense explorer in the correct direction`, async ({ page }) => {
@@ -81,6 +101,51 @@ for (const locale of ['ar', 'en'] as const) {
     await expect(category).toHaveValue('');
     await expect(subcategory).toHaveValue('');
   });
+
+  test(`${locale} shortcut detail renders record 3, grouped non-empty public fields and taxonomy back-links`, async ({ page, request }) => {
+    const apiResponse = await request.get('/api/shortcuts/3');
+    expect(apiResponse.status()).toBe(200);
+    const record = await apiResponse.json() as Record<string, unknown> & {
+      id: number;
+      shortcut: string;
+      mainDomain: string;
+      category: string;
+      subcategory: string;
+    };
+
+    const response = await page.goto(`/${locale}/library/3`);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+    await expect(page.locator('[data-shortcut-detail="3"]')).toBeVisible();
+    await expect(page.getByText('/ACPStorefrontLuxury', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-detail-section]')).toHaveCount(3);
+
+    const expectedFields = DETAIL_FIELDS.filter((field) => {
+      const value = record[field];
+      return typeof value === 'string' && value.trim().length > 0;
+    }).sort();
+    const renderedFields = (await page.locator('[data-detail-field]').evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('data-detail-field')).filter(Boolean),
+    )).sort();
+    expect(renderedFields).toEqual(expectedFields);
+
+    const domainHref = await page.locator('[data-taxonomy-link="domain"]').getAttribute('href');
+    const categoryHref = await page.locator('[data-taxonomy-link="category"]').getAttribute('href');
+    const subcategoryHref = await page.locator('[data-taxonomy-link="subcategory"]').getAttribute('href');
+    expect(new URL(domainHref!, 'https://iyaaz.test').searchParams.get('domain')).toBe(record.mainDomain);
+    expect(new URL(categoryHref!, 'https://iyaaz.test').searchParams.get('category')).toBe(record.category);
+    expect(new URL(subcategoryHref!, 'https://iyaaz.test').searchParams.get('subcategory')).toBe(record.subcategory);
+
+    const detailText = await page.locator('[data-shortcut-detail="3"]').innerText();
+    expect(detailText).not.toMatch(/https?:\/\//i);
+    expect(detailText).not.toMatch(/www\./i);
+  });
+
+  test(`${locale} missing shortcut detail returns a localized 404`, async ({ page }) => {
+    const response = await page.goto(`/${locale}/library/99999`);
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: copy[locale].notFound })).toBeVisible();
+  });
 }
 
 test('sorting and paging stay URL-driven and request only the current 50-row page', async ({ page }) => {
@@ -123,6 +188,29 @@ test('library explorer remains horizontally safe at 320px', async ({ page }) => 
   await page.goto('/ar/library');
   await expect(page.locator('[data-record-id]').first()).toBeVisible();
 
+  const hasOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(hasOverflow).toBe(false);
+});
+
+test('shortcut detail uses a desktop rail and stacks safely on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/en/library/3');
+  const desktopMain = await page.locator('[data-detail-main]').boundingBox();
+  const desktopRail = await page.locator('[data-detail-rail]').boundingBox();
+  expect(desktopMain).not.toBeNull();
+  expect(desktopRail).not.toBeNull();
+  expect(Math.abs((desktopMain?.y ?? 0) - (desktopRail?.y ?? 0))).toBeLessThan(24);
+  expect((desktopMain?.width ?? 0)).toBeGreaterThan(desktopRail?.width ?? 0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const mobileMain = await page.locator('[data-detail-main]').boundingBox();
+  const mobileRail = await page.locator('[data-detail-rail]').boundingBox();
+  expect(mobileMain).not.toBeNull();
+  expect(mobileRail).not.toBeNull();
+  expect((mobileRail?.y ?? 0)).toBeGreaterThan((mobileMain?.y ?? 0) + (mobileMain?.height ?? 0) - 2);
   const hasOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
