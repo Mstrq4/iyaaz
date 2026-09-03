@@ -1,4 +1,5 @@
 import '../../../styles/library.css';
+import '../../../styles/workspace.css';
 
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
