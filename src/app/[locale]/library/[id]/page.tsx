@@ -1,6 +1,7 @@
 import '../../../../styles/library.css';
 import '../../../../styles/detail.css';
 import '../../../../styles/prompt-builder.css';
+import '../../../../styles/workspace.css';
 
 import { notFound } from 'next/navigation';
 
