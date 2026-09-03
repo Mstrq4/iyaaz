@@ -31,8 +31,11 @@ class FakeStorage {
 }
 
 class FakeWindow extends EventTarget {
-  constructor(readonly localStorage: FakeStorage) {
+  readonly localStorage: FakeStorage;
+
+  constructor(localStorage: FakeStorage) {
     super();
+    this.localStorage = localStorage;
   }
 }
 
