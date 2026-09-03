@@ -7,11 +7,21 @@ export interface PromptFieldValue extends PromptFieldDescriptor {
   value: string;
 }
 
+export interface PromptClientContext {
+  name: string;
+  businessDescription: string;
+  brandColors: string;
+  tone: string;
+  constraints: string;
+  notes: string;
+}
+
 export interface AssemblePromptOptions {
   record: LocalizedLibraryRecord;
   language: PromptLanguage;
   fields: readonly PromptFieldValue[];
   notes?: string;
+  client?: PromptClientContext;
 }
 
 export interface AssembledPrompt {
@@ -25,6 +35,15 @@ const copy = {
   ar: {
     shortcut: 'الاختصار',
     intent: 'الهدف',
+    clientContext: 'سياق العميل',
+    clientLabels: {
+      name: 'العميل',
+      businessDescription: 'نبذة النشاط',
+      brandColors: 'ألوان الهوية',
+      tone: 'النبرة',
+      constraints: 'القيود',
+      notes: 'ملاحظات العميل',
+    },
     inputs: 'مدخلات المشروع',
     execution: 'تعليمات التنفيذ',
     outputs: 'المخرجات المتوقعة',
@@ -49,6 +68,15 @@ const copy = {
   en: {
     shortcut: 'Shortcut',
     intent: 'Intent',
+    clientContext: 'Client context',
+    clientLabels: {
+      name: 'Client',
+      businessDescription: 'Business',
+      brandColors: 'Brand colors',
+      tone: 'Tone',
+      constraints: 'Constraints',
+      notes: 'Client notes',
+    },
     inputs: 'Project inputs',
     execution: 'Execution instructions',
     outputs: 'Expected outputs',
@@ -81,8 +109,75 @@ const CONSTRAINT_FIELDS = [
   'brandCompliance',
 ] as const satisfies readonly (keyof LocalizedLibraryRecord)[];
 
+const CLIENT_OVERRIDE_ALIASES = {
+  businessDescription: ['business', 'activity', 'نشاط', 'نبذة'],
+  brandColors: ['brand color', 'brand palette', 'ألوان الهوية', 'الوان الهوية'],
+  tone: ['tone', 'نبرة'],
+  constraints: ['constraint', 'قيود'],
+} as const satisfies Record<Exclude<keyof PromptClientContext, 'name' | 'notes'>, readonly string[]>;
+
 function clean(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeAliasText(value: string): string {
+  return value
+    .normalize('NFKC')
+    .toLocaleLowerCase('en-US')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/gu, '')
+    .replace(/\u0640/gu, '')
+    .replace(/[\s_-]+/gu, ' ')
+    .trim();
+}
+
+function fieldOverridesClientValue(
+  fields: readonly PromptFieldValue[],
+  aliases: readonly string[],
+): boolean {
+  const normalizedAliases = aliases.map(normalizeAliasText);
+  return fields.some((field) => {
+    if (!field.value.trim() || isAttachmentRequirement(field.sourceFragment)) return false;
+    const searchable = normalizeAliasText(`${field.label} ${field.sourceFragment}`);
+    return normalizedAliases.some((alias) => searchable.includes(alias));
+  });
+}
+
+function clientContextLines(
+  client: PromptClientContext | undefined,
+  language: PromptLanguage,
+  fields: readonly PromptFieldValue[],
+): string[] {
+  if (!client) return [];
+  const labels = copy[language].clientLabels;
+  const lines: string[] = [];
+
+  const name = clean(client.name);
+  if (name) lines.push(`- ${labels.name}: ${name}`);
+
+  const businessDescription = clean(client.businessDescription);
+  if (businessDescription && !fieldOverridesClientValue(fields, CLIENT_OVERRIDE_ALIASES.businessDescription)) {
+    lines.push(`- ${labels.businessDescription}: ${businessDescription}`);
+  }
+
+  const brandColors = clean(client.brandColors);
+  if (brandColors && !fieldOverridesClientValue(fields, CLIENT_OVERRIDE_ALIASES.brandColors)) {
+    lines.push(`- ${labels.brandColors}: ${brandColors}`);
+  }
+
+  const tone = clean(client.tone);
+  if (tone && !fieldOverridesClientValue(fields, CLIENT_OVERRIDE_ALIASES.tone)) {
+    lines.push(`- ${labels.tone}: ${tone}`);
+  }
+
+  const constraints = clean(client.constraints);
+  if (constraints && !fieldOverridesClientValue(fields, CLIENT_OVERRIDE_ALIASES.constraints)) {
+    lines.push(`- ${labels.constraints}: ${constraints}`);
+  }
+
+  const clientNotes = clean(client.notes);
+  if (clientNotes) lines.push(`- ${labels.notes}: ${clientNotes}`);
+
+  return lines;
 }
 
 function normalizeBoolean(value: string, language: PromptLanguage): string {
@@ -102,12 +197,17 @@ function attachmentReminder(field: PromptFieldDescriptor, language: PromptLangua
     : `Attach “${field.label}” in your target AI tool before sending this prompt.`;
 }
 
-export function assemblePrompt({ record, language, fields, notes = '' }: AssemblePromptOptions): AssembledPrompt {
+export function assemblePrompt({ record, language, fields, notes = '', client }: AssemblePromptOptions): AssembledPrompt {
   const labels = copy[language];
   const lines: string[] = [
     `${labels.shortcut}: ${record.shortcut}`,
     `${labels.intent}: ${clean(record.functionText) || clean(record.name)}`,
   ];
+
+  const clientLines = clientContextLines(client, language, fields);
+  if (clientLines.length > 0) {
+    lines.push('', `${labels.clientContext}:`, ...clientLines);
+  }
 
   const inputLines = fields
     .filter((field) => !isAttachmentRequirement(field.sourceFragment))
