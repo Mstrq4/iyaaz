@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Locale, LibraryCopy } from '../../lib/i18n';
 import type { LibraryRecord } from '../../lib/library/types';
 import { IyaazIcon } from '../icons/IyaazIcon';
+import { FavoriteButton } from '../workspace/FavoriteButton';
 
 interface LibraryRowProps {
   locale: Locale;
@@ -66,6 +67,8 @@ export function LibraryRow({ locale, copy, record }: LibraryRowProps) {
       </div>
 
       <div className="library-row__actions">
+        <FavoriteButton locale={locale} recordId={record.id} />
+
         <button
           type="button"
           className="library-row__copy"
