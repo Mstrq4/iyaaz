@@ -64,8 +64,10 @@ for (const item of locales) {
 
 test('English documentation states the current canonical-Arabic translation fallback explicitly', async ({ page }) => {
   await page.goto('/en/docs');
-  await expect(page.getByText(/canonical Arabic/i)).toBeVisible();
-  await expect(page.getByText(/translation/i)).toBeVisible();
+  const translations = page.locator('#translations');
+  await expect(translations.getByRole('heading', { name: 'Current English translation fallback' })).toBeVisible();
+  await expect(translations.getByText(/canonical Arabic/i)).toBeVisible();
+  await expect(translations.getByText(/complete English translation/i)).toBeVisible();
 });
 
 for (const route of ['/ar', '/en', '/ar/docs', '/en/docs', '/ar/statistics', '/en/statistics']) {
