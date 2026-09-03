@@ -1,4 +1,5 @@
 import '../../../styles/workspace.css';
+import '../../../styles/client-profiles.css';
 
 import { notFound } from 'next/navigation';
 
