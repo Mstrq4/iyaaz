@@ -116,3 +116,51 @@ test('canonical record 3 renders two attachment reminders and never an upload co
   await expect(builder.locator('[data-asset-reminder]')).toHaveCount(2);
   await expect(builder.locator('input[type="file"]')).toHaveCount(0);
 });
+
+test('Prompt Builder selects a local client profile, restores it per language draft and emits deterministic client context', async ({ page }) => {
+  await page.addInitScript(({ key }) => {
+    localStorage.setItem(key, JSON.stringify([{
+      id: 'prime-mobile',
+      name: 'Prime Mobile',
+      businessDescription: 'Smartphones and accessories retailer',
+      brandColors: '#000000, #D3B316',
+      tone: 'Premium and clear',
+      constraints: 'No decorative clutter',
+      notes: '',
+      createdAt: '2026-09-03T00:00:00.000Z',
+      updatedAt: '2026-09-03T00:00:00.000Z',
+    }]));
+  }, { key: 'iyaaz:clients:v1' });
+
+  const nonGetRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'GET') nonGetRequests.push(`${request.method()} ${request.url()}`);
+  });
+
+  await page.goto('/en/library/3');
+  const builder = page.locator('[data-prompt-builder]');
+  const profile = builder.getByLabel('Client profile');
+  await expect(profile).toHaveValue('');
+  await profile.selectOption('prime-mobile');
+  await fillRequiredPromptControls(builder);
+  await builder.getByRole('button', { name: 'Generate full prompt' }).click();
+
+  const output = builder.locator('[data-prompt-output]');
+  await expect(output).toContainText('Client context:');
+  await expect(output).toContainText('Client: Prime Mobile');
+  await expect(output).toContainText('Brand colors: #000000, #D3B316');
+  expect(nonGetRequests).toEqual([]);
+
+  await page.reload();
+  await expect(builder.getByLabel('Client profile')).toHaveValue('prime-mobile');
+  const draft = await page.evaluate(() => sessionStorage.getItem('iyaaz:prompt-draft:3:en'));
+  expect(draft).toContain('"clientId":"prime-mobile"');
+
+  await builder.getByLabel('Output language').selectOption('ar');
+  await expect(builder.getByLabel('Client profile')).toHaveValue('');
+  await builder.getByLabel('Client profile').selectOption('prime-mobile');
+  await fillRequiredPromptControls(builder);
+  await builder.getByRole('button', { name: 'Generate full prompt' }).click();
+  await expect(builder.locator('[data-prompt-output]')).toContainText('سياق العميل:');
+  await expect(builder.locator('[data-prompt-output]')).toContainText('العميل: Prime Mobile');
+});
