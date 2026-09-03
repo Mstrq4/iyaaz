@@ -148,7 +148,9 @@ test('Prompt Builder selects a local client profile, restores it per language dr
   const output = builder.locator('[data-prompt-output]');
   await expect(output).toContainText('Client context:');
   await expect(output).toContainText('Client: Prime Mobile');
-  await expect(output).toContainText('Brand colors: #000000, #D3B316');
+  await expect(output).toContainText('Tone: Premium and clear');
+  await expect(output).not.toContainText('Brand colors: #000000, #D3B316');
+  await expect(output).toContainText('ألوان الهوية: Sample value 5');
   expect(nonGetRequests).toEqual([]);
 
   await page.reload();
