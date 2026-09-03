@@ -4,6 +4,8 @@ import { detailCopy, libraryCopy, type Locale } from '../../lib/i18n';
 import type { LibraryRecord, LocalizedLibraryRecord } from '../../lib/library/types';
 import { parseRequiredInputs } from '../../lib/prompt/schema';
 import { PromptBuilder } from '../prompt/PromptBuilder';
+import { FavoriteButton } from '../workspace/FavoriteButton';
+import { HistoryRecorder } from '../workspace/HistoryRecorder';
 import { DetailSection, type DetailField } from './DetailSection';
 
 interface ShortcutDetailProps {
@@ -62,6 +64,8 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
 
   return (
     <article className="shortcut-detail" data-shortcut-detail={record.id}>
+      <HistoryRecorder recordId={record.id} />
+
       <nav className="shortcut-detail__breadcrumb" aria-label={copy.breadcrumb}>
         <Link href={`/${locale}/library`}>{copy.library}</Link>
         <span aria-hidden="true">/</span>
@@ -72,6 +76,7 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
         <span className="eyebrow">{copy.recordLabel} #{record.id}</span>
         <code className="shortcut-detail__shortcut" dir="ltr">{record.shortcut}</code>
         <h1 {...recordLanguageProps}>{record.name}</h1>
+        <FavoriteButton locale={locale} recordId={record.id} />
         {record.translationStatus === 'missing' && locale === 'en' ? (
           <p className="library-translation-note">{libraryCopy.en.translationNotice}</p>
         ) : null}
