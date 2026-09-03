@@ -90,3 +90,85 @@ test('asset source fragments become attachment reminders without claiming an upl
   assert.match(result.text, /Attachment reminders:/);
   assert.doesNotMatch(result.text, /uploaded|تم الرفع/i);
 });
+
+test('client context is inserted before project inputs and omits empty profile fields', () => {
+  const result = assemblePrompt({
+    record: record('en'),
+    language: 'en',
+    fields,
+    client: {
+      name: 'Prime Mobile',
+      businessDescription: 'Smartphones and accessories retailer',
+      brandColors: '#000000, #D3B316',
+      tone: '',
+      constraints: 'No decorative clutter',
+      notes: '',
+    },
+  });
+
+  assert.match(result.text, /Client context:/);
+  assert.match(result.text, /- Client: Prime Mobile/);
+  assert.match(result.text, /- Business: Smartphones and accessories retailer/);
+  assert.match(result.text, /- Brand colors: #000000, #D3B316/);
+  assert.match(result.text, /- Constraints: No decorative clutter/);
+  assert.doesNotMatch(result.text, /- Tone:/);
+  assert.ok(result.text.indexOf('Client context:') < result.text.indexOf('Project inputs:'));
+});
+
+test('explicit prompt fields override generic matching client context aliases deterministically', () => {
+  const overrideFields: Field[] = [
+    ...fields,
+    { id: 'palette', label: 'Brand palette', kind: 'text', required: false, sourceFragment: 'brand color', value: 'Blue and white' },
+    { id: 'tone', label: 'Tone', kind: 'text', required: false, sourceFragment: 'tone', value: 'Premium' },
+  ];
+  const result = assemblePrompt({
+    record: record('en'),
+    language: 'en',
+    fields: overrideFields,
+    client: {
+      name: 'Prime Mobile',
+      businessDescription: '',
+      brandColors: '#000000, #D3B316',
+      tone: 'Friendly',
+      constraints: '',
+      notes: '',
+    },
+  });
+
+  assert.match(result.text, /- Client: Prime Mobile/);
+  assert.doesNotMatch(result.text, /- Brand colors: #000000, #D3B316/);
+  assert.doesNotMatch(result.text, /- Tone: Friendly/);
+  assert.match(result.text, /- Brand palette: Blue and white/);
+  assert.match(result.text, /- Tone: Premium/);
+});
+
+test('Arabic client context uses localized labels and Arabic aliases suppress generic lines', () => {
+  const arabicFields: Field[] = [
+    { id: 'activity', label: 'نبذة النشاط', kind: 'text', required: false, sourceFragment: 'نبذة عن النشاط', value: 'متجر هواتف ذكية' },
+  ];
+  const result = assemblePrompt({
+    record: record('ar'),
+    language: 'ar',
+    fields: arabicFields,
+    client: {
+      name: 'برايم موبايل',
+      businessDescription: 'متجر إلكترونيات',
+      brandColors: '#000000',
+      tone: 'فاخر',
+      constraints: '',
+      notes: '',
+    },
+  });
+
+  assert.match(result.text, /سياق العميل:/);
+  assert.match(result.text, /- العميل: برايم موبايل/);
+  assert.doesNotMatch(result.text, /- نبذة النشاط: متجر إلكترونيات/);
+  assert.match(result.text, /- ألوان الهوية: #000000/);
+  assert.match(result.text, /- النبرة: فاخر/);
+});
+
+test('omitting client preserves existing prompt output exactly', () => {
+  const baseline = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '' });
+  const explicitUndefined = assemblePrompt({ record: record('en'), language: 'en', fields, notes: '', client: undefined });
+  assert.deepEqual(explicitUndefined, baseline);
+});
