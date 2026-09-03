@@ -93,19 +93,22 @@ export function CatalogStats({ locale, statistics, variant = 'summary' }: Catalo
               <h2 id="category-statistics">{copy.categoryBreakdownHeading}</h2>
             </header>
             <div className="catalog-stats__domains">
-              {statistics.domains.map((domain) => (
-                <section className="catalog-stats__domain" key={domain.name} aria-labelledby={`domain-${domain.name}`}>
-                  <h3 id={`domain-${domain.name}`}>{domain.name}</h3>
-                  <ul>
-                    {domain.categories.map((category) => (
-                      <li key={category.name}>
-                        <span>{category.name}</span>
-                        <strong>{formatCount(category.count)}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
+              {statistics.domains.map((domain, index) => {
+                const headingId = `catalog-domain-${index + 1}`;
+                return (
+                  <section className="catalog-stats__domain" key={domain.name} aria-labelledby={headingId}>
+                    <h3 id={headingId}>{domain.name}</h3>
+                    <ul>
+                      {domain.categories.map((category) => (
+                        <li key={category.name}>
+                          <span>{category.name}</span>
+                          <strong>{formatCount(category.count)}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
             </div>
           </section>
         </>
