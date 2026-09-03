@@ -31,9 +31,12 @@ test('favorite from an Arabic library row persists across reload with stable tog
 });
 
 test('favorite from detail resolves on the favorites page and missing canonical IDs are omitted', async ({ page }) => {
-  await page.addInitScript(({ key }) => {
-    localStorage.setItem(key, JSON.stringify([{ recordId: 999999, savedAt: '2026-09-03T00:00:00.000Z' }]));
-  }, { key: FAVORITES_KEY });
+  await page.addInitScript(({ key, marker }) => {
+    if (sessionStorage.getItem(marker) !== '1') {
+      localStorage.setItem(key, JSON.stringify([{ recordId: 999999, savedAt: '2026-09-03T00:00:00.000Z' }]));
+      sessionStorage.setItem(marker, '1');
+    }
+  }, { key: FAVORITES_KEY, marker: 'iyaaz:test:favorites-seeded' });
   await page.goto('/en/library/3');
 
   const favorite = page.getByRole('button', { name: 'Favorite' });
@@ -69,11 +72,14 @@ test('opening a detail records and increments browser-local history without a mu
   page.on('request', (request) => {
     if (request.method() !== 'GET') mutationRequests.push(`${request.method()} ${request.url()}`);
   });
-  await page.addInitScript(({ key }) => {
-    localStorage.setItem(key, JSON.stringify([
-      { recordId: 3, lastOpenedAt: '2026-09-02T00:00:00.000Z', openCount: 1 },
-    ]));
-  }, { key: HISTORY_KEY });
+  await page.addInitScript(({ key, marker }) => {
+    if (sessionStorage.getItem(marker) !== '1') {
+      localStorage.setItem(key, JSON.stringify([
+        { recordId: 3, lastOpenedAt: '2026-09-02T00:00:00.000Z', openCount: 1 },
+      ]));
+      sessionStorage.setItem(marker, '1');
+    }
+  }, { key: HISTORY_KEY, marker: 'iyaaz:test:history-seeded' });
 
   await page.goto('/en/library/3');
   await expect.poll(async () => {
