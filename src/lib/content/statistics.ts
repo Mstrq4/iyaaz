@@ -1,6 +1,6 @@
 import type { LibraryTaxonomy, TaxonomyCountNode } from '../library/server.ts';
 
-export interface CatalogCategoryStatistic extends TaxonomyCountNode {}
+export type CatalogCategoryStatistic = TaxonomyCountNode;
 
 export interface CatalogDomainStatistic extends TaxonomyCountNode {
   categories: CatalogCategoryStatistic[];
