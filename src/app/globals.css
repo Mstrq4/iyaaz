@@ -95,6 +95,7 @@ button,
 }
 
 .app-header__inner {
+  position: relative;
   inline-size: min(calc(100% - (2 * var(--gutter-inline))), var(--content-shell));
   min-block-size: 4rem;
   margin-inline: auto;
@@ -357,6 +358,7 @@ button,
   }
 
   .app-navigation {
+    position: static;
     flex: 0 0 auto;
     margin-inline-start: auto;
   }
@@ -368,9 +370,9 @@ button,
   .app-navigation__list {
     position: absolute;
     inset-block-start: calc(100% + var(--space-2));
-    inset-inline-end: 0;
-    z-index: var(--z-dropdown);
-    inline-size: min(18rem, calc(100vw - (2 * var(--gutter-inline))));
+    inset-inline: 0;
+    z-index: var(--z-sticky);
+    inline-size: auto;
     max-block-size: calc(100dvh - 7rem);
     display: none;
     align-items: stretch;
