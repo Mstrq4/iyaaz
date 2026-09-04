@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AppNavigation } from '@/components/shell/AppNavigation';
 import { BrandLink } from '@/components/shell/BrandLink';
 import { LocaleSwitch } from '@/components/shell/LocaleSwitch';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -11,10 +11,7 @@ export function AppHeader({ locale }: { locale: Locale }) {
     <header className="app-header">
       <div className="app-header__inner">
         <BrandLink locale={locale} />
-
-        <nav className="app-navigation" aria-label={copy.primaryNavigation}>
-          <Link className="app-navigation__link" href={`/${locale}`}>{copy.home}</Link>
-        </nav>
+        <AppNavigation locale={locale} />
 
         <div className="app-utilities">
           <LocaleSwitch locale={locale} label={copy.switchLanguage} />
