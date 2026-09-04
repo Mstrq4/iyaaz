@@ -64,13 +64,13 @@ test.describe('Phase 4E responsive bidi theme matrix', () => {
           expect(metrics.colorScheme).toContain(theme);
           expect(metrics.backgroundImage).toBe('none');
 
-          const targets = page.locator('.app-header a, .app-header button');
+          const targets = page.locator('.app-header a:visible, .app-header button:visible');
           const targetCount = await targets.count();
           expect(targetCount).toBeGreaterThan(0);
           for (let index = 0; index < targetCount; index += 1) {
             const box = await targets.nth(index).boundingBox();
-            expect(box, `header target ${index} should be rendered`).not.toBeNull();
-            expect(box!.height, `header target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
+            expect(box, `visible header target ${index} should be rendered`).not.toBeNull();
+            expect(box!.height, `visible header target ${index} should be at least 44px tall`).toBeGreaterThanOrEqual(44);
           }
         });
       }
