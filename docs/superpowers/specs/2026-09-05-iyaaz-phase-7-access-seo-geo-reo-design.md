@@ -78,16 +78,17 @@ Rules:
 - `private` requires `scope='app'`;
 - `share` initially supports only `scope='shortcut'` with one exact `recordId`;
 - verify signatures with timing-safe comparison;
-- one current secret only in Phase 7; rotating the secret intentionally invalidates outstanding credentials.
+- one current secret only in Phase 7; rotating the secret intentionally invalidates all outstanding credentials.
 
-No token mint endpoint is exposed publicly.
+No token mint endpoint is exposed publicly. Because the design is intentionally stateless, Phase 7 does not provide per-token revocation before expiry; emergency/global revocation is performed by rotating `IYAAZ_ACCESS_SECRET`.
 
 ### Credential generation
 
 Add a maintainer-side script/CLI that can generate:
 
 - a private full-app credential with explicit expiry;
-- a shared shortcut credential for one record ID with explicit expiry.
+- a shared shortcut credential for one record ID with explicit expiry;
+- a localized access URL using `ar` or `en` without embedding the server secret.
 
 The script reads the server secret from the environment and never writes it to source control.
 
@@ -97,9 +98,9 @@ The script reads the server secret from the environment and never writes it to s
 
 ### Token delivery
 
-Generated access links target the non-indexed access route using a URL fragment, for example conceptually:
+Generated access links target the localized non-indexed access route using a URL fragment, for example conceptually:
 
-`/access#credential=<token>`
+`/{locale}/access#credential=<token>`
 
 The fragment is intentionally not sent in the initial HTTP request. Client code posts the credential to a same-origin exchange route, then removes/replaces the fragment by navigating to the allowed target.
 
@@ -131,16 +132,17 @@ Mode behavior:
 
 **private**
 - all product content/read APIs require a valid unexpired private `scope='app'` credential;
-- `/access`, required static assets and the exchange endpoint remain reachable;
-- unauthenticated page requests go to the access surface;
+- `/{locale}/access`, required static assets and the exchange endpoint remain reachable;
+- unauthenticated page requests go to the localized access surface;
 - unauthenticated API requests return `401` JSON.
 
 **shared**
 - a valid share credential grants only the one exact shortcut detail identified by `recordId`;
 - it does not grant library search, favorites, history, clients, statistics, docs, other shortcut IDs or batch/search APIs;
+- the same scoped shortcut may be viewed through the supported Arabic or English presentation route without expanding the record scope;
 - shared rendering is read-only and suppresses personal workspace controls;
 - wrong-scope or wrong-record access returns a non-revealing `404`/denied result rather than disclosing broader inventory;
-- `/access` and exchange remain reachable.
+- `/{locale}/access` and exchange remain reachable.
 
 The initial shared scope is intentionally narrow. General collections, arbitrary route scopes and client-authored share bundles are out of scope for Phase 7.
 
@@ -201,7 +203,7 @@ Always `noindex,nofollow`:
 - `/{locale}/favorites`
 - `/{locale}/history`
 - `/{locale}/clients`
-- `/access`
+- `/{locale}/access`
 - private-mode content
 - shared-mode content
 
@@ -236,7 +238,7 @@ In `public` mode, sitemap contains only canonical indexable public URLs:
 - every Arabic canonical shortcut detail;
 - English shortcut details only when a real English translation overlay makes them indexable.
 
-Exclude personal routes, `/access`, query states, missing records and all credential-bearing URLs.
+Exclude personal routes, localized access routes, query states, missing records and all credential-bearing URLs.
 
 In `private` and `shared` modes, no protected inventory is listed in sitemap.
 
@@ -295,7 +297,7 @@ HTTP/Playwright tests:
 - shared token opens exactly one shortcut and no other inventory;
 - personal workspace controls are absent from shared view;
 - APIs reject unauthorized access under protected modes;
-- access route has no credential in rendered HTML after exchange/navigation;
+- localized access route has no credential in rendered HTML after exchange/navigation;
 - Arabic/English canonical + alternates are correct;
 - query-state library pages are noindex and canonicalized cleanly;
 - personal routes are noindex;
@@ -337,6 +339,7 @@ Phase 7 does not add:
 - user accounts or password database;
 - OAuth/Auth.js/Supabase Auth;
 - persistent server sessions;
+- per-token revocation database;
 - database-backed share management;
 - arbitrary multi-record share bundles;
 - analytics or usage tracking;
