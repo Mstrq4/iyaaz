@@ -40,3 +40,27 @@ for (const locale of ['ar', 'en'] as const) {
     expect(nonGetRequests).toEqual([]);
   });
 }
+
+test('client profiles remain usable in the current page session when persistent storage is blocked', async ({ page }) => {
+  await page.addInitScript(() => {
+    const blocked = () => {
+      throw new DOMException('Persistent storage is blocked for this test.', 'SecurityError');
+    };
+    Object.defineProperties(Storage.prototype, {
+      getItem: { configurable: true, value: blocked },
+      setItem: { configurable: true, value: blocked },
+      removeItem: { configurable: true, value: blocked },
+    });
+  });
+
+  await page.goto('/en/clients');
+  await page.getByLabel('Client name').fill('Memory-only client');
+  await page.getByLabel('Business description').fill('Temporary local profile');
+  await page.getByRole('button', { name: 'Save profile' }).click();
+
+  await expect(page.getByText('Memory-only client', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Edit/ }).first().click();
+  await page.getByLabel('Tone').fill('Precise');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('Memory-only client', { exact: true })).toBeVisible();
+});
