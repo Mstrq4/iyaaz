@@ -3,6 +3,19 @@ import { expect, test } from '@playwright/test';
 const FAVORITES_KEY = 'iyaaz:favorites:v1';
 const HISTORY_KEY = 'iyaaz:history:v1';
 
+async function blockPersistentStorage(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    const blocked = () => {
+      throw new DOMException('Persistent storage is blocked for this test.', 'SecurityError');
+    };
+    Object.defineProperties(Storage.prototype, {
+      getItem: { configurable: true, value: blocked },
+      setItem: { configurable: true, value: blocked },
+      removeItem: { configurable: true, value: blocked },
+    });
+  });
+}
+
 test('batch shortcut endpoint is strict, deduplicated and omits missing IDs', async ({ request }) => {
   const response = await request.get('/api/shortcuts?ids=3,3,999999');
   expect(response.status()).toBe(200);
@@ -65,6 +78,18 @@ test('favorites can remove one entry and clear all with confirmation', async ({ 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Clear favorites' }).click();
   await expect(page.getByText('No favorites yet.')).toBeVisible();
+});
+
+test('favorites remain functional in the current page session when persistent storage is blocked', async ({ page }) => {
+  await blockPersistentStorage(page);
+  await page.goto('/en/library?q=%2FACPStorefrontLuxury');
+
+  const favorite = page.locator('[data-record-id="3"]').getByRole('button', { name: 'Favorite' });
+  await expect(favorite).toHaveAttribute('aria-pressed', 'false');
+  await favorite.click();
+  await expect(favorite).toHaveAttribute('aria-pressed', 'true');
+  await favorite.click();
+  await expect(favorite).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('opening a detail records and increments browser-local history without a mutation request', async ({ page }) => {
