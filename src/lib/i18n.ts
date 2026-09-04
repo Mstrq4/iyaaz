@@ -21,7 +21,14 @@ export const shellCopy: Record<Locale, {
   foundation: string;
   library: string;
   home: string;
+  favorites: string;
+  history: string;
+  clients: string;
+  docs: string;
+  statistics: string;
   primaryNavigation: string;
+  openNavigation: string;
+  closeNavigation: string;
   switchLanguage: string;
   toggleTheme: string;
   skipToContent: string;
@@ -33,7 +40,14 @@ export const shellCopy: Record<Locale, {
     foundation: 'يتم بناء المكتبة الآن على أساس ثنائي اللغة ومتجاوب بالكامل.',
     library: 'المكتبة',
     home: 'الرئيسية',
+    favorites: 'المفضلة',
+    history: 'السجل',
+    clients: 'العملاء',
+    docs: 'التوثيق',
+    statistics: 'الإحصائيات',
     primaryNavigation: 'التنقل الرئيسي',
+    openNavigation: 'فتح القائمة',
+    closeNavigation: 'إغلاق القائمة',
     switchLanguage: 'English',
     toggleTheme: 'تبديل المظهر',
     skipToContent: 'انتقل إلى المحتوى',
@@ -45,7 +59,14 @@ export const shellCopy: Record<Locale, {
     foundation: 'The library is being built on a fully bilingual and responsive foundation.',
     library: 'Library',
     home: 'Home',
+    favorites: 'Favorites',
+    history: 'History',
+    clients: 'Clients',
+    docs: 'Docs',
+    statistics: 'Statistics',
     primaryNavigation: 'Primary navigation',
+    openNavigation: 'Open menu',
+    closeNavigation: 'Close menu',
     switchLanguage: 'العربية',
     toggleTheme: 'Toggle theme',
     skipToContent: 'Skip to content',
