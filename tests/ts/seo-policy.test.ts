@@ -21,6 +21,15 @@ test('site origin is normalized to the public http(s) origin and rejects unsafe 
   }
 });
 
+test('site origin falls back to the Vercel project production domain when the public variable is absent', () => {
+  const origin = getSiteOrigin({
+    NODE_ENV: 'test',
+    VERCEL_PROJECT_PRODUCTION_URL: 'iyaaz.vercel.app',
+  });
+
+  assert.equal(origin.href, 'https://iyaaz.vercel.app/');
+});
+
 test('clean public collection routes are indexable, self-canonical and bilingual', () => {
   for (const route of ['home', 'library', 'docs', 'statistics'] as const) {
     for (const locale of ['ar', 'en'] as const) {
