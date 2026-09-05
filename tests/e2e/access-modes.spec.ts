@@ -32,7 +32,8 @@ async function exchangeCredential(
   credential: string,
   expectedPath: string,
 ) {
-  await page.goto(`/${locale}/access#credential=${encodeURIComponent(credential)}`);
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await page.goto(`/${locale}/access?exchange=${nonce}#credential=${encodeURIComponent(credential)}`);
   await page.waitForURL((url) => url.pathname === expectedPath && !url.hash);
 }
 

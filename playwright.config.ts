@@ -11,5 +11,5 @@ export default defineConfig({
     { name: 'chromium-desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'chromium-mobile', use: { ...devices['Pixel 7'] } },
   ],
-  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : { command: 'npm run start', url: 'http://127.0.0.1:3000/ar', reuseExistingServer: !process.env.CI, timeout: 120_000 },
+  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : { command: 'npm run start', url: 'http://127.0.0.1:3000/en/access', reuseExistingServer: !process.env.CI, timeout: 120_000 },
 });
