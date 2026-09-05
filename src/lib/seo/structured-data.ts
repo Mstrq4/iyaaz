@@ -48,6 +48,7 @@ export function shortcutJsonLd(options: {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
     name: options.record.name,
+    alternateName: options.record.shortcut,
     description: options.record.functionText,
     url: options.canonicalUrl.toString(),
     inLanguage: options.locale,
