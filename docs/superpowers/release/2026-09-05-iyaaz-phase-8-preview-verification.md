@@ -20,4 +20,8 @@ This release checkpoint exists to trigger and record a Vercel Preview deployment
 - Library, shortcut detail, documentation, statistics, robots and sitemap surfaces respond as expected in public mode.
 - No Preview runtime 5xx/error cluster is present during verification.
 
+## Environment-variable redeploy checkpoint
+
+The previous Preview build failed during prerendering because `NEXT_PUBLIC_SITE_URL` was unavailable to that deployment. The variable has now been configured in Vercel by the project owner. This documentation-only update intentionally triggers a fresh Preview deployment so the environment change is consumed by a new build.
+
 The final verified deployment identifiers and evidence are recorded in PR #1 after the checks complete.
