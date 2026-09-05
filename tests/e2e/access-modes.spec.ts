@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { signAccessCredential } from '../../src/lib/access/credential.ts';
 
@@ -37,7 +37,23 @@ async function exchangeCredential(
   await page.waitForURL((url) => url.pathname === expectedPath && !url.hash);
 }
 
+async function expectProtectedDiscoveryClosed(request: APIRequestContext) {
+  const robots = await request.get('/robots.txt', { maxRedirects: 0 });
+  expect(robots.status()).toBe(200);
+  expect(await robots.text()).toContain('Disallow: /');
+
+  const sitemap = await request.get('/sitemap.xml', { maxRedirects: 0 });
+  expect(sitemap.status()).toBe(200);
+  const xml = await sitemap.text();
+  expect(xml).not.toContain('<loc>');
+  expect(xml).not.toMatch(/library\/\d+|favorites|history|clients|credential|token/i);
+}
+
 if (MODE === 'private') {
+  test('private mode publishes closed robots and empty sitemap without requiring a session', async ({ request }) => {
+    await expectProtectedDiscoveryClosed(request);
+  });
+
   test('private mode denies protected pages and APIs before exchange, then unlocks the app with a valid private credential', async ({ page }) => {
     await page.goto('/en/library');
     await expect(page).toHaveURL(/\/en\/access$/);
@@ -48,6 +64,7 @@ if (MODE === 'private') {
     await exchangeCredential(page, 'en', privateCredential(Math.floor(Date.now() / 1000)), '/en');
     await page.goto('/en/library');
     await expect(page.getByRole('heading', { level: 1, name: 'Shortcut Library' })).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex.*nofollow/i);
 
     const allowedApi = await page.evaluate(async () => (await fetch('/api/search?q=ACPStorefrontLuxury')).status);
     expect(allowedApi).toBe(200);
@@ -84,7 +101,11 @@ if (MODE === 'private') {
 }
 
 if (MODE === 'shared') {
-  test('shared mode unlocks only the exact shortcut and renders it read-only', async ({ page }) => {
+  test('shared mode publishes closed robots and empty sitemap without requiring a session', async ({ request }) => {
+    await expectProtectedDiscoveryClosed(request);
+  });
+
+  test('shared mode unlocks only the exact shortcut and renders it read-only in both locales', async ({ page }) => {
     const credential = shareCredential(Math.floor(Date.now() / 1000), 3);
     await exchangeCredential(page, 'en', credential, '/en/library/3');
 
@@ -93,9 +114,16 @@ if (MODE === 'shared') {
     await expect(page.locator('[data-prompt-builder]')).toHaveCount(0);
     await expect(page.locator('[data-taxonomy-link]')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Library', exact: true })).toHaveCount(0);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex.*nofollow/i);
+    await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
 
     const exactApi = await page.evaluate(async () => (await fetch('/api/shortcuts/3')).status);
     expect(exactApi).toBe(200);
+
+    const arabic = await page.goto('/ar/library/3');
+    expect(arabic?.status()).toBe(200);
+    await expect(page.getByText('/ACPStorefrontLuxury', { exact: true }).first()).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   });
 
   test('shared mode returns non-revealing 404s for wrong records, inventory pages and enumeration APIs', async ({ page }) => {
