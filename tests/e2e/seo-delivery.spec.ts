@@ -18,6 +18,10 @@ function flattenTypes(values: readonly unknown[]): string[] {
   });
 }
 
+function sitemapLocations(xml: string): string[] {
+  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
+}
+
 test('public robots and sitemap expose only clean public discovery surfaces', async ({ request }) => {
   const robots = await request.get('/robots.txt');
   expect(robots.ok()).toBeTruthy();
@@ -30,14 +34,16 @@ test('public robots and sitemap expose only clean public discovery surfaces', as
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.ok()).toBeTruthy();
   const xml = await sitemap.text();
+  const locations = sitemapLocations(xml);
   for (const path of ['/ar', '/en', '/ar/library', '/en/library', '/ar/docs', '/en/docs', '/ar/statistics', '/en/statistics', '/ar/library/3']) {
-    expect(xml).toContain(`<loc>http://127.0.0.1:3000${path}</loc>`);
+    expect(locations).toContain(`http://127.0.0.1:3000${path}`);
   }
-  expect(xml).not.toContain('/en/library/3</loc>');
-  expect(xml).not.toMatch(/favorites|history|clients|access|credential|token|sourceUrl|referenceUrl|[?#]/i);
+  expect(locations).not.toContain('http://127.0.0.1:3000/en/library/3');
+  expect(locations.every((url) => !/[?#]/.test(url))).toBe(true);
+  expect(locations.join('\n')).not.toMatch(/favorites|history|clients|access|credential|token|sourceUrl|referenceUrl/i);
 });
 
-test('public home and library deliver canonical WebSite and CollectionPage JSON-LD', async ({ page }) => {
+test('public home and clean library deliver canonical WebSite and CollectionPage JSON-LD', async ({ page }) => {
   await page.goto('/ar');
   const homeValues = await jsonLd(page);
   expect(flattenTypes(homeValues)).toContain('WebSite');
@@ -47,6 +53,11 @@ test('public home and library deliver canonical WebSite and CollectionPage JSON-
   const libraryValues = await jsonLd(page);
   expect(flattenTypes(libraryValues)).toContain('CollectionPage');
   expect(JSON.stringify(libraryValues)).toContain('http://127.0.0.1:3000/ar/library');
+});
+
+test('filtered library state stays noindex-oriented and publishes no CollectionPage JSON-LD', async ({ page }) => {
+  await page.goto('/ar/library?q=ACP');
+  expect(await jsonLd(page)).toEqual([]);
 });
 
 test('Arabic shortcut detail delivers CreativeWork and BreadcrumbList without sensitive fields', async ({ page }) => {
@@ -75,5 +86,5 @@ test('retrieval surfaces keep one clear h1 and meaningful internal links', async
 
   await page.goto('/ar/library/3');
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.locator('a[href="/ar/library"]').first()).toBeVisible();
+  await expect(page.locator('main a[href="/ar/library"]').first()).toBeVisible();
 });
