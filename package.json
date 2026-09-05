@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "access:link": "node --experimental-strip-types scripts/generate_access_link.ts",
     "test:logic": "node --experimental-strip-types --test tests/ts/*.test.ts",
     "test:python": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "test:data": "python3 scripts/validate_snapshot.py",
