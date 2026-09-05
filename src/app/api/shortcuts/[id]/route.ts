@@ -1,3 +1,4 @@
+import { requireReadApiAccess } from '../../../../lib/access/server.ts';
 import { findLibraryRecordById, loadLibraryRecords } from '../../../../lib/library/server.ts';
 
 interface DetailContext {
@@ -16,6 +17,9 @@ export async function GET(_request: Request, context: DetailContext): Promise<Re
   if (!Number.isSafeInteger(id)) {
     return Response.json({ error: 'not_found' }, { status: 404 });
   }
+
+  const denied = await requireReadApiAccess({ recordId: id });
+  if (denied) return denied;
 
   const records = await loadLibraryRecords();
   const record = findLibraryRecordById(records, id);

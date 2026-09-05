@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 
 import { LibraryExplorer } from '../../../components/library/LibraryExplorer';
+import { requireAppPageAccess } from '../../../lib/access/server.ts';
 import { isLocale, libraryCopy } from '../../../lib/i18n';
 
 interface LibraryPageProps {
@@ -14,6 +15,7 @@ interface LibraryPageProps {
 export default async function LibraryPage({ params }: LibraryPageProps) {
   const { locale: rawLocale } = await params;
   if (!isLocale(rawLocale)) notFound();
+  await requireAppPageAccess(rawLocale);
 
   const locale = rawLocale;
   const copy = libraryCopy[locale];

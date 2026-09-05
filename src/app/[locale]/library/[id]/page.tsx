@@ -6,6 +6,7 @@ import '../../../../styles/workspace.css';
 import { notFound } from 'next/navigation';
 
 import { ShortcutDetail } from '../../../../components/library/ShortcutDetail';
+import { requireShortcutPageAccess } from '../../../../lib/access/server.ts';
 import { isLocale } from '../../../../lib/i18n';
 import {
   findLibraryRecordById,
@@ -29,6 +30,7 @@ export default async function ShortcutDetailPage({ params }: ShortcutDetailPageP
 
   const id = parseRecordId(rawId);
   if (!id) notFound();
+  const { sharedReadOnly } = await requireShortcutPageAccess(rawLocale, id);
 
   const records = await loadLibraryRecords();
   const canonicalRecord = findLibraryRecordById(records, id);
@@ -48,6 +50,7 @@ export default async function ShortcutDetailPage({ params }: ShortcutDetailPageP
       record={localizedRecord}
       canonicalRecord={canonicalRecord}
       localizedRecords={{ ar: arRecord, en: enRecord }}
+      sharedReadOnly={sharedReadOnly}
     />
   );
 }

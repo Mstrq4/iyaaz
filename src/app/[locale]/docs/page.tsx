@@ -2,12 +2,14 @@ import '../../../styles/content-pages.css';
 
 import { notFound } from 'next/navigation';
 
+import { requireAppPageAccess } from '../../../lib/access/server.ts';
 import { contentCopy } from '../../../lib/content/copy.ts';
 import { isLocale } from '../../../lib/i18n';
 
 export default async function DocumentationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  await requireAppPageAccess(locale);
 
   const copy = contentCopy[locale].docs;
 

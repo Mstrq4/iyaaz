@@ -13,6 +13,7 @@ interface ShortcutDetailProps {
   record: LocalizedLibraryRecord;
   canonicalRecord: LibraryRecord;
   localizedRecords: Record<Locale, LocalizedLibraryRecord>;
+  sharedReadOnly?: boolean;
 }
 
 function libraryFilterHref(locale: Locale, values: Record<string, string>): string {
@@ -23,7 +24,13 @@ function libraryFilterHref(locale: Locale, values: Record<string, string>): stri
   return `/${locale}/library?${params.toString()}`;
 }
 
-export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecords }: ShortcutDetailProps) {
+export function ShortcutDetail({
+  locale,
+  record,
+  canonicalRecord,
+  localizedRecords,
+  sharedReadOnly = false,
+}: ShortcutDetailProps) {
   const copy = detailCopy[locale];
   const recordLanguageProps = record.translationStatus === 'missing'
     ? { lang: 'ar', dir: 'rtl' as const }
@@ -60,14 +67,30 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
     field('notes', copy.notes),
   ];
 
-  const promptSchema = parseRequiredInputs(canonicalRecord.requiredInputs);
+  const promptSchema = sharedReadOnly ? [] : parseRequiredInputs(canonicalRecord.requiredInputs);
+
+  const taxonomyValue = (
+    kind: 'domain' | 'category' | 'subcategory',
+    text: string,
+    values: Record<string, string>,
+  ) => sharedReadOnly ? (
+    <span {...recordLanguageProps}>{text}</span>
+  ) : (
+    <Link
+      data-taxonomy-link={kind}
+      href={libraryFilterHref(locale, values)}
+      {...recordLanguageProps}
+    >
+      {text}
+    </Link>
+  );
 
   return (
-    <article className="shortcut-detail" data-shortcut-detail={record.id}>
-      <HistoryRecorder recordId={record.id} />
+    <article className="shortcut-detail" data-shortcut-detail={record.id} data-shared-read-only={sharedReadOnly ? 'true' : undefined}>
+      {sharedReadOnly ? null : <HistoryRecorder recordId={record.id} />}
 
       <nav className="shortcut-detail__breadcrumb" aria-label={copy.breadcrumb}>
-        <Link href={`/${locale}/library`}>{copy.library}</Link>
+        {sharedReadOnly ? <span>{copy.library}</span> : <Link href={`/${locale}/library`}>{copy.library}</Link>}
         <span aria-hidden="true">/</span>
         <span aria-current="page" dir="ltr">{record.shortcut}</span>
       </nav>
@@ -76,7 +99,7 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
         <span className="eyebrow">{copy.recordLabel} #{record.id}</span>
         <code className="shortcut-detail__shortcut" dir="ltr">{record.shortcut}</code>
         <h1 {...recordLanguageProps}>{record.name}</h1>
-        <FavoriteButton locale={locale} recordId={record.id} />
+        {sharedReadOnly ? null : <FavoriteButton locale={locale} recordId={record.id} />}
         {record.translationStatus === 'missing' && locale === 'en' ? (
           <p className="library-translation-note">{libraryCopy.en.translationNotice}</p>
         ) : null}
@@ -90,11 +113,13 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
         </div>
 
         <aside className="shortcut-detail__rail" data-detail-rail>
-          <PromptBuilder
-            uiLocale={locale}
-            schema={promptSchema}
-            records={localizedRecords}
-          />
+          {sharedReadOnly ? null : (
+            <PromptBuilder
+              uiLocale={locale}
+              schema={promptSchema}
+              records={localizedRecords}
+            />
+          )}
 
           <div className="shortcut-detail__facts" aria-label={copy.facts}>
             <h2>{copy.facts}</h2>
@@ -113,46 +138,22 @@ export function ShortcutDetail({ locale, record, canonicalRecord, localizedRecor
               </div>
               <div>
                 <dt>{copy.domain}</dt>
-                <dd>
-                  <Link
-                    data-taxonomy-link="domain"
-                    href={libraryFilterHref(locale, { domain: canonicalRecord.mainDomain })}
-                    {...recordLanguageProps}
-                  >
-                    {record.mainDomain}
-                  </Link>
-                </dd>
+                <dd>{taxonomyValue('domain', record.mainDomain, { domain: canonicalRecord.mainDomain })}</dd>
               </div>
               <div>
                 <dt>{copy.category}</dt>
-                <dd>
-                  <Link
-                    data-taxonomy-link="category"
-                    href={libraryFilterHref(locale, {
-                      domain: canonicalRecord.mainDomain,
-                      category: canonicalRecord.category,
-                    })}
-                    {...recordLanguageProps}
-                  >
-                    {record.category}
-                  </Link>
-                </dd>
+                <dd>{taxonomyValue('category', record.category, {
+                  domain: canonicalRecord.mainDomain,
+                  category: canonicalRecord.category,
+                })}</dd>
               </div>
               <div>
                 <dt>{copy.subcategory}</dt>
-                <dd>
-                  <Link
-                    data-taxonomy-link="subcategory"
-                    href={libraryFilterHref(locale, {
-                      domain: canonicalRecord.mainDomain,
-                      category: canonicalRecord.category,
-                      subcategory: canonicalRecord.subcategory,
-                    })}
-                    {...recordLanguageProps}
-                  >
-                    {record.subcategory}
-                  </Link>
-                </dd>
+                <dd>{taxonomyValue('subcategory', record.subcategory, {
+                  domain: canonicalRecord.mainDomain,
+                  category: canonicalRecord.category,
+                  subcategory: canonicalRecord.subcategory,
+                })}</dd>
               </div>
             </dl>
           </div>

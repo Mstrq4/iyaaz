@@ -4,12 +4,14 @@ import '../../../styles/client-profiles.css';
 import { notFound } from 'next/navigation';
 
 import { ClientProfilesView } from '../../../components/workspace/ClientProfilesView';
+import { requireAppPageAccess } from '../../../lib/access/server.ts';
 import { isLocale } from '../../../lib/i18n';
 import { workspaceCopy } from '../../../lib/workspace/copy';
 
 export default async function ClientProfilesPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   if (!isLocale(rawLocale)) notFound();
+  await requireAppPageAccess(rawLocale);
   const copy = workspaceCopy[rawLocale];
 
   return (

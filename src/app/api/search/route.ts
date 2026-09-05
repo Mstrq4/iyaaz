@@ -1,3 +1,4 @@
+import { requireReadApiAccess } from '../../../lib/access/server.ts';
 import { searchLibrary, type SearchFilters, type SearchSort } from '../../../lib/library/search.ts';
 import { loadLibraryRecords } from '../../../lib/library/server.ts';
 
@@ -17,6 +18,9 @@ function clean(value: string | null): string | undefined {
 }
 
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireReadApiAccess();
+  if (denied) return denied;
+
   const url = new URL(request.url);
   const filters: SearchFilters = {
     mainDomain: clean(url.searchParams.get('domain')),
