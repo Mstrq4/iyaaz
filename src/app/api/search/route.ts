@@ -1,4 +1,4 @@
-import { requireReadApiAccess } from '../../../lib/access/server.ts';
+import { requireReadApiAccess } from '../../../lib/access/api.ts';
 import { searchLibrary, type SearchFilters, type SearchSort } from '../../../lib/library/search.ts';
 import { loadLibraryRecords } from '../../../lib/library/server.ts';
 
@@ -18,7 +18,7 @@ function clean(value: string | null): string | undefined {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  const denied = await requireReadApiAccess();
+  const denied = await requireReadApiAccess(request);
   if (denied) return denied;
 
   const url = new URL(request.url);

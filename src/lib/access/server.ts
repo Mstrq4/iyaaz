@@ -43,24 +43,3 @@ export async function requireShortcutPageAccess(
   if (config.mode === 'private') redirect(`/${locale}/access`);
   notFound();
 }
-
-export async function requireReadApiAccess(target?: { recordId?: number }): Promise<Response | null> {
-  const config = readAccessConfig();
-  if (config.mode === 'public') return null;
-
-  const recordId = target?.recordId;
-  const decision = authorizeAccess({
-    config,
-    token: await readAccessToken(),
-    target: recordId === undefined ? { kind: 'api' } : { kind: 'shortcut', recordId },
-  });
-  if (decision.allowed) return null;
-
-  return Response.json(
-    { error: decision.status === 404 ? 'not_found' : 'unauthorized' },
-    {
-      status: decision.status,
-      headers: { 'Cache-Control': 'no-store, private' },
-    },
-  );
-}

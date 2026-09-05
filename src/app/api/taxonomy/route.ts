@@ -1,8 +1,8 @@
-import { requireReadApiAccess } from '../../../lib/access/server.ts';
+import { requireReadApiAccess } from '../../../lib/access/api.ts';
 import { getLibraryTaxonomy } from '../../../lib/library/server.ts';
 
-export async function GET(): Promise<Response> {
-  const denied = await requireReadApiAccess();
+export async function GET(request?: Request): Promise<Response> {
+  const denied = await requireReadApiAccess(request);
   if (denied) return denied;
 
   const taxonomy = await getLibraryTaxonomy();

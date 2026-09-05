@@ -1,9 +1,9 @@
-import { requireReadApiAccess } from '../../../lib/access/server.ts';
+import { requireReadApiAccess } from '../../../lib/access/api.ts';
 import { findLibraryRecordById, loadLibraryRecords } from '../../../lib/library/server';
 import { parseWorkspaceRecordIds } from '../../../lib/workspace/records';
 
 export async function GET(request: Request) {
-  const denied = await requireReadApiAccess();
+  const denied = await requireReadApiAccess(request);
   if (denied) return denied;
 
   const ids = parseWorkspaceRecordIds(new URL(request.url).searchParams.get('ids'));

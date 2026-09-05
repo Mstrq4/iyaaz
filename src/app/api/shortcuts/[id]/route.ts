@@ -1,4 +1,4 @@
-import { requireReadApiAccess } from '../../../../lib/access/server.ts';
+import { requireReadApiAccess } from '../../../../lib/access/api.ts';
 import { findLibraryRecordById, loadLibraryRecords } from '../../../../lib/library/server.ts';
 
 interface DetailContext {
@@ -7,7 +7,7 @@ interface DetailContext {
 
 const POSITIVE_INTEGER_ID = /^[1-9]\d*$/;
 
-export async function GET(_request: Request, context: DetailContext): Promise<Response> {
+export async function GET(request: Request, context: DetailContext): Promise<Response> {
   const { id: rawId } = await context.params;
   if (!POSITIVE_INTEGER_ID.test(rawId)) {
     return Response.json({ error: 'not_found' }, { status: 404 });
@@ -18,7 +18,7 @@ export async function GET(_request: Request, context: DetailContext): Promise<Re
     return Response.json({ error: 'not_found' }, { status: 404 });
   }
 
-  const denied = await requireReadApiAccess({ recordId: id });
+  const denied = await requireReadApiAccess(request, { recordId: id });
   if (denied) return denied;
 
   const records = await loadLibraryRecords();
