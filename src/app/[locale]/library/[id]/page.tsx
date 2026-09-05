@@ -7,15 +7,17 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { ShortcutDetail } from '../../../../components/library/ShortcutDetail';
+import { JsonLd } from '../../../../components/seo/JsonLd';
 import { readAccessConfig } from '../../../../lib/access/config.ts';
 import { requireShortcutPageAccess } from '../../../../lib/access/server.ts';
-import { isLocale } from '../../../../lib/i18n';
+import { detailCopy, isLocale, shellCopy } from '../../../../lib/i18n';
 import {
   findLibraryRecordById,
   findLocalizedLibraryRecordById,
   loadLibraryRecords,
 } from '../../../../lib/library/server';
 import { buildPageMetadata, getSiteOrigin, publicRoutePolicy } from '../../../../lib/seo';
+import { shortcutJsonLd } from '../../../../lib/seo/structured-data.ts';
 
 interface ShortcutDetailPageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -78,14 +80,40 @@ export default async function ShortcutDetailPage({ params }: ShortcutDetailPageP
   if (!arRecord || !enRecord) notFound();
 
   const localizedRecord = rawLocale === 'ar' ? arRecord : enRecord;
+  const mode = readAccessConfig().mode;
+  const policy = publicRoutePolicy({
+    mode,
+    locale: rawLocale,
+    route: 'shortcut',
+    recordId: id,
+    englishTranslationStatus: enRecord.translationStatus === 'translated' ? 'translated' : 'canonical-fallback',
+  });
+  const canonicalUrl = new URL(policy.canonicalPath, getSiteOrigin());
 
   return (
-    <ShortcutDetail
-      locale={rawLocale}
-      record={localizedRecord}
-      canonicalRecord={canonicalRecord}
-      localizedRecords={{ ar: arRecord, en: enRecord }}
-      sharedReadOnly={sharedReadOnly}
-    />
+    <>
+      {policy.index ? (
+        <JsonLd
+          data={shortcutJsonLd({
+            canonicalUrl,
+            locale: rawLocale,
+            record: localizedRecord,
+            breadcrumbs: [
+              { name: shellCopy[rawLocale].home, url: new URL(`/${rawLocale}`, getSiteOrigin()) },
+              { name: detailCopy[rawLocale].library, url: new URL(`/${rawLocale}/library`, getSiteOrigin()) },
+              { name: localizedRecord.name, url: canonicalUrl },
+            ],
+          })}
+        />
+      ) : null}
+
+      <ShortcutDetail
+        locale={rawLocale}
+        record={localizedRecord}
+        canonicalRecord={canonicalRecord}
+        localizedRecords={{ ar: arRecord, en: enRecord }}
+        sharedReadOnly={sharedReadOnly}
+      />
+    </>
   );
 }
