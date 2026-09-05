@@ -6,11 +6,13 @@ export type AccessTarget =
   | { kind: 'shortcut'; recordId: number }
   | { kind: 'api' };
 
+export type AccessDenialReason = 'missing' | 'invalid' | 'scope' | 'record' | 'mode';
+
 export type AccessDecision =
   | { allowed: true; payload: AccessCredentialPayload | null }
-  | { allowed: false; status: 401 | 404; reason: 'missing' | 'invalid' | 'scope' | 'record' | 'mode' };
+  | { allowed: false; status: 401 | 404; reason: AccessDenialReason };
 
-function denied(mode: AccessConfig['mode'], reason: AccessDecision extends infer _T ? 'missing' | 'invalid' | 'scope' | 'record' | 'mode' : never): AccessDecision {
+function denied(mode: AccessConfig['mode'], reason: AccessDenialReason): AccessDecision {
   return {
     allowed: false,
     status: mode === 'private' ? 401 : 404,
