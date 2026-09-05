@@ -6,8 +6,9 @@ import { readAccessConfig } from '../../src/lib/access/config.ts';
 const VALID_SITE = 'https://iyaaz.example';
 const VALID_SECRET = '0123456789abcdef0123456789abcdef';
 
-function env(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+function env(overrides: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
   return {
+    NODE_ENV: 'test',
     NEXT_PUBLIC_SITE_URL: VALID_SITE,
     ...overrides,
   };
