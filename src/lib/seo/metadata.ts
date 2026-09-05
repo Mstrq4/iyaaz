@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 
 import type { IndexPolicy } from './policy.ts';
 
-function absolute(siteOrigin: URL, path: string): URL {
+function absolute(siteOrigin: URL, path: string): string {
   if (!path.startsWith('/') || path.includes('?') || path.includes('#')) {
     throw new Error('SEO paths must be clean root-relative paths');
   }
-  return new URL(path, siteOrigin);
+  return new URL(path, siteOrigin).toString();
 }
 
 export function buildPageMetadata(options: {
