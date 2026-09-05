@@ -15,6 +15,11 @@ async function expectAlternate(page: Page, locale: 'ar' | 'en', path: string) {
   await expect(page.locator(`link[rel="alternate"][hreflang="${locale}"]`)).toHaveAttribute('href', `${ORIGIN}${path}`);
 }
 
+async function expectUsefulDescription(page: Page) {
+  const description = await page.locator('meta[name="description"]').getAttribute('content');
+  expect(description?.trim().length ?? 0).toBeGreaterThanOrEqual(20);
+}
+
 const publicPages = [
   { locale: 'ar', route: '', title: /حوّل الاختصار إلى إيعاز جاهز/, suffix: '' },
   { locale: 'en', route: '', title: /Turn a shortcut into a copy-ready prompt/i, suffix: '' },
@@ -32,7 +37,7 @@ for (const item of publicPages) {
     await page.goto(path);
 
     await expect(page).toHaveTitle(item.title);
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /\S{20,}/);
+    await expectUsefulDescription(page);
     await expectCanonical(page, path);
     await expectRobots(page, /index.*follow/i);
     await expectAlternate(page, 'ar', `/ar${item.suffix}`);
