@@ -5,13 +5,17 @@ import { buildPageMetadata, getSiteOrigin, publicRoutePolicy } from '../../src/l
 
 const ORIGIN = new URL('https://iyaaz.example/');
 
+function env(siteUrl: string): NodeJS.ProcessEnv {
+  return { NODE_ENV: 'test', NEXT_PUBLIC_SITE_URL: siteUrl };
+}
+
 test('site origin is normalized to the public http(s) origin and rejects unsafe values', () => {
-  const origin = getSiteOrigin({ NEXT_PUBLIC_SITE_URL: 'https://iyaaz.example/base/path?q=1#x' } as NodeJS.ProcessEnv);
+  const origin = getSiteOrigin(env('https://iyaaz.example/base/path?q=1#x'));
   assert.equal(origin.href, 'https://iyaaz.example/');
 
   for (const value of ['', '/relative', 'ftp://iyaaz.example', 'not a url']) {
     assert.throws(
-      () => getSiteOrigin({ NEXT_PUBLIC_SITE_URL: value } as NodeJS.ProcessEnv),
+      () => getSiteOrigin(env(value)),
       /NEXT_PUBLIC_SITE_URL/i,
     );
   }
