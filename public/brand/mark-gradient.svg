@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" data-geometry="iyaaz-ribbon-v2" role="img" aria-labelledby="title desc">
+  <title id="title">IYAAZ mark</title><desc id="desc">Geometric amethyst and lavender folded ribbon identity mark.</desc>
+  <defs>
+    <linearGradient id="ribbonBase" x1="22" y1="20" x2="132" y2="142" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5B176B"/><stop offset=".22" stop-color="#8D3AB0"/><stop offset=".48" stop-color="#E7E6F5"/><stop offset=".67" stop-color="#A565CF"/><stop offset="1" stop-color="#3E1848"/>
+    </linearGradient>
+    <linearGradient id="topGlass" x1="22" y1="18" x2="122" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#632078" stop-opacity=".96"/><stop offset=".22" stop-color="#A95BCF" stop-opacity=".92"/><stop offset=".56" stop-color="#F7F5FF" stop-opacity=".82"/><stop offset=".82" stop-color="#C9B9EE" stop-opacity=".58"/><stop offset="1" stop-color="#83509B" stop-opacity=".72"/>
+    </linearGradient>
+    <linearGradient id="lowerGlass" x1="35" y1="137" x2="124" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#572069"/><stop offset=".32" stop-color="#7F2E9F"/><stop offset=".62" stop-color="#B16CDF"/><stop offset="1" stop-color="#4B1B58"/>
+    </linearGradient>
+    <radialGradient id="gemFill" cx="35%" cy="25%" r="85%"><stop offset="0" stop-color="#FBF9FF"/><stop offset=".35" stop-color="#D8B8F2"/><stop offset=".72" stop-color="#9146B5"/><stop offset="1" stop-color="#3E1848"/></radialGradient>
+    <linearGradient id="edgeSheen" x1="20" y1="25" x2="120" y2="125" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".45" stop-color="#FFFFFF" stop-opacity=".18"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".55"/></linearGradient>
+  </defs>
+  <path data-role="ribbon-core" d="M31 14C22 12 15 18 14 27C13 35 18 42 25 46L105 84C112 87 120 84 124 77C128 69 125 59 117 55L44 18C40 16 35 14 31 14ZM34 66C26 69 21 76 21 85V121C21 135 31 146 45 147C51 147 56 146 62 143L119 111C127 107 131 97 127 89C123 81 113 78 105 82L55 110V76C55 68 48 62 40 63C38 63 36 64 34 66Z" fill="url(#ribbonBase)" fill-rule="evenodd"/>
+  <path d="M31 14C22 12 15 18 14 27C13 35 18 42 25 46L105 84C112 87 120 84 124 77C128 69 125 59 117 55L44 18C40 16 35 14 31 14Z" fill="url(#topGlass)"/>
+  <path d="M34 66C26 69 21 76 21 85V121C21 135 31 146 45 147C51 147 56 146 62 143L119 111C127 107 131 97 127 89C123 81 113 78 105 82L55 110V76C55 68 48 62 40 63C38 63 36 64 34 66Z" fill="url(#lowerGlass)" fill-opacity=".92"/>
+  <path data-role="highlight" d="M26 20C22 20 19 23 19 28C19 32 21 35 25 37L105 75C110 77 115 75 118 71" fill="none" stroke="url(#edgeSheen)" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
+  <path data-role="highlight" d="M30 78V119C30 128 36 136 45 138C49 139 54 137 58 135L116 103" fill="none" stroke="url(#edgeSheen)" stroke-width="1.7" stroke-linecap="round" opacity=".66"/>
+  <path d="M43 18L113 55C121 59 124 67 121 75L116 83C118 73 113 66 105 62L44 31C38 28 29 29 24 34C17 28 20 20 27 18C32 16 38 16 43 18Z" fill="#FFFFFF" opacity=".13"/>
+  <path data-role="gem-core" d="M72 66L86 77L72 89L58 78Z" fill="url(#gemFill)" stroke="#F4EFFF" stroke-opacity=".65" stroke-width="1"/>
+  <path d="M72 66L72 78L58 78Z" fill="#FFFFFF" opacity=".45"/>
+  <path d="M72 78L86 77L72 89Z" fill="#4E1D5C" opacity=".55"/>
+</svg>
