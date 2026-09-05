@@ -1,10 +1,28 @@
 import '../../../styles/content-pages.css';
 
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { readAccessConfig } from '../../../lib/access/config.ts';
 import { requireAppPageAccess } from '../../../lib/access/server.ts';
 import { contentCopy } from '../../../lib/content/copy.ts';
 import { isLocale } from '../../../lib/i18n';
+import { buildPageMetadata, getSiteOrigin, publicRoutePolicy } from '../../../lib/seo';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const copy = contentCopy[locale].docs;
+  const mode = readAccessConfig().mode;
+
+  return buildPageMetadata({
+    locale,
+    title: copy.heading,
+    description: copy.lead,
+    policy: publicRoutePolicy({ mode, locale, route: 'docs' }),
+    siteOrigin: getSiteOrigin(),
+  });
+}
 
 export default async function DocumentationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

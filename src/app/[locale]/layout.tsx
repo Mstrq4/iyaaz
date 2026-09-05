@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/shell/AppShell';
 import { ThemeBootstrap } from '@/components/theme/ThemeBootstrap';
 import { directionForLocale, isLocale, SUPPORTED_LOCALES } from '@/lib/i18n';
+import { getSiteOrigin } from '@/lib/seo';
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -17,10 +18,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) return {};
 
   return {
-    title: locale === 'ar' ? 'إيعاز | مكتبة اختصارات الدعاية والتصميم' : 'IYAAZ | Creative Prompts Library',
-    description: locale === 'ar'
-      ? 'مكتبة ثنائية اللغة لاكتشاف اختصارات الدعاية والتصميم وتجهيز النصوص الجاهزة للنسخ.'
-      : 'A bilingual library for discovering creative shortcuts and preparing copy-ready prompts.',
+    metadataBase: getSiteOrigin(),
+    title: {
+      default: locale === 'ar' ? 'إيعاز' : 'IYAAZ',
+      template: locale === 'ar' ? '%s | إيعاز' : '%s | IYAAZ',
+    },
   };
 }
 

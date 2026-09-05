@@ -1,14 +1,32 @@
 import '../../styles/content-pages.css';
 
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CatalogStats } from '../../components/content/CatalogStats';
+import { readAccessConfig } from '../../lib/access/config.ts';
 import { requireAppPageAccess } from '../../lib/access/server.ts';
 import { contentCopy } from '../../lib/content/copy.ts';
 import { buildCatalogStatistics } from '../../lib/content/statistics.ts';
 import { isLocale } from '../../lib/i18n';
 import { getLibraryTaxonomy } from '../../lib/library/server.ts';
+import { buildPageMetadata, getSiteOrigin, publicRoutePolicy } from '../../lib/seo';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const copy = contentCopy[locale].landing;
+  const mode = readAccessConfig().mode;
+
+  return buildPageMetadata({
+    locale,
+    title: copy.heading,
+    description: copy.lead,
+    policy: publicRoutePolicy({ mode, locale, route: 'home' }),
+    siteOrigin: getSiteOrigin(),
+  });
+}
 
 export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
