@@ -67,6 +67,16 @@ test('site URL must be an absolute http or https origin', () => {
   }
 });
 
+test('Vercel project production URL is accepted when NEXT_PUBLIC_SITE_URL is unavailable', () => {
+  const config = readAccessConfig({
+    NODE_ENV: 'test',
+    IYAAZ_ACCESS_MODE: 'public',
+    VERCEL_PROJECT_PRODUCTION_URL: 'iyaaz.vercel.app',
+  });
+
+  assert.equal(config.siteUrl.href, 'https://iyaaz.vercel.app/');
+});
+
 test('public mode ignores an absent access secret but preserves valid site configuration', () => {
   const config = readAccessConfig(env({ IYAAZ_ACCESS_MODE: 'public', IYAAZ_ACCESS_SECRET: '' }));
   assert.equal(config.mode, 'public');
