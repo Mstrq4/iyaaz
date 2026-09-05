@@ -37,12 +37,13 @@ export function AccessExchange({ locale, processingLabel, failureLabel }: Access
     const credential = fragment.get('credential')?.trim() ?? '';
     clearFragment();
 
-    if (!credential) {
-      setFailed(true);
-      return;
-    }
-
     void (async () => {
+      if (!credential) {
+        await Promise.resolve();
+        setFailed(true);
+        return;
+      }
+
       try {
         const response = await fetch('/api/access/exchange', {
           method: 'POST',
